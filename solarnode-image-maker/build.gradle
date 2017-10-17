@@ -21,6 +21,7 @@ checkstyle {
 }
 
 ext {
+	awsSdkVersion = '1.11.214'
 	jacksonVersion = '2.9.2'
 	springBootVersion = '1.5.7.RELEASE'
 }
@@ -33,6 +34,9 @@ dependencies {
 
 	// allow WAR to be run from command line OR deployed in Tomcat
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	
+	// AWS
+	compile "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
 
 	// JCache
 	compile 'javax.cache:cache-api:1.0.0'
