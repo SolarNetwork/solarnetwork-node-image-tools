@@ -22,8 +22,6 @@
 
 package net.solarnetwork.nim.service.impl;
 
-import net.solarnetwork.nim.service.FileSystemNodeImageRepository;
-
 /**
  * Test cases for the {@link FileSystemNodeImageRepository} class.
  * 

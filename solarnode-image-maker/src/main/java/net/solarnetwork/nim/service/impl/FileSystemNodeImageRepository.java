@@ -20,9 +20,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.nim.service;
+package net.solarnetwork.nim.service.impl;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.service.NodeImageRepository;
 
 /**
  * {@link NodeImageRepository} implementation that uses a file system hierarchy to store node images
