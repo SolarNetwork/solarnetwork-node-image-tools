@@ -1,0 +1,98 @@
+plugins {
+    id 'checkstyle'
+    id 'org.springframework.boot' version '1.5.7.RELEASE'
+    id 'java'
+    id 'war'
+    id 'eclipse-wtp'
+}
+
+apply plugin: 'checkstyle'
+apply plugin: 'org.springframework.boot'
+
+repositories {
+	jcenter()
+	maven {
+		url "https://data.solarnetwork.net/archive/repository/solarnetwork-stage/"
+	}
+}
+
+checkstyle {
+   toolVersion ="7.6.1"
+}
+
+ext {
+	jacksonVersion = '2.9.2'
+	springBootVersion = '1.5.7.RELEASE'
+}
+
+dependencies {
+	// Spring
+	compile "org.springframework.boot:spring-boot-starter-cache:${springBootVersion}"
+	compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+	compile "org.springframework.boot:spring-boot-starter-websocket:${springBootVersion}"
+
+	// allow WAR to be run from command line OR deployed in Tomcat
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+
+	// JCache
+	compile 'javax.cache:cache-api:1.0.0'
+	runtime 'org.ehcache:ehcache:3.3+'
+
+	// JSON
+	compile "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+	compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+	compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+	compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
+
+	// SolarNetwork
+	compile 'org.osgi:org.osgi.enterprise:4.2.0'
+	compile 'net.solarnetwork.common:net.solarnetwork.common.web:1.11.2+'
+
+    // Testing
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompile 'org.mock-server:mockserver-netty:3.10.7';
+
+    // API Documentation
+    compile 'io.springfox:springfox-swagger2:2.6.1'
+    compile 'io.springfox:springfox-swagger-ui:2.6.1'
+}
+
+configurations.compile {
+	exclude group: 'org.eclipse.virgo.mirrored'
+	exclude group: 'org.osgi', module: 'org.osgi.compendium'
+	exclude group: 'javax.servlet', module: 'com.springsource.javax.servlet'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+	wtp {
+		facet {
+			facet name: 'jst.java', version: 1.8
+			facet name: 'jst.web', version: '3.1'
+		}
+	}
+}
+
+jar {
+    baseName = 'solarnode-image-maker'
+    version =  version
+    manifest {
+        attributes 'Implementation-Title': 'SolarNode Image Maker',
+                   'Implementation-Version': version
+    }
+}
+
+war {
+    baseName = 'solarnode-image-maker'
+    version =  version
+    manifest {
+        attributes 'Implementation-Title': 'SolarNode Image Maker',
+                   'Implementation-Version': version
+    }
+}
