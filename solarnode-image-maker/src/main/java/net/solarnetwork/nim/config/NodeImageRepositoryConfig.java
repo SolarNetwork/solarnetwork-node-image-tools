@@ -22,6 +22,9 @@
 
 package net.solarnetwork.nim.config;
 
+import java.io.File;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -37,10 +40,19 @@ import net.solarnetwork.nim.service.impl.FileSystemNodeImageRepository;
 @Configuration
 public class NodeImageRepositoryConfig {
 
+  @Value("${repo.fs.path:var/repo}")
+  private File fsRepoRootDirectory = new File("var/repo");
+
   @Bean
   @Profile({ "default", "development" })
   FileSystemNodeImageRepository fsNodeImageRepository() {
-    return new FileSystemNodeImageRepository();
+    if (!fsRepoRootDirectory.isDirectory()) {
+      if (!fsRepoRootDirectory.mkdirs()) {
+        throw new RuntimeException("FS repo root " + fsRepoRootDirectory.getAbsolutePath()
+            + " does not exist and unable to create");
+      }
+    }
+    return new FileSystemNodeImageRepository(fsRepoRootDirectory.toPath());
   }
 
 }

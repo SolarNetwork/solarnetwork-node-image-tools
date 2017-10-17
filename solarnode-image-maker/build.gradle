@@ -47,6 +47,10 @@ dependencies {
 	compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
 	compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 	compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
+	
+	// Utilities
+	compile 'org.apache.commons:commons-compress:1.15'
+	compile 'org.tukaani:xz:1.6'
 
 	// SolarNetwork
 	compile 'org.osgi:org.osgi.enterprise:4.2.0'
@@ -54,7 +58,9 @@ dependencies {
 
     // Testing
     testCompile 'org.springframework.boot:spring-boot-starter-test'
-    testCompile 'org.mock-server:mockserver-netty:3.10.7';
+    testCompile 'org.mock-server:mockserver-netty:3.10.7'
+    testCompile 'com.spotify:hamcrest-jackson:1.1.0'
+    testCompile 'com.spotify:hamcrest-pojo:1.1.0'
 
     // API Documentation
     compile 'io.springfox:springfox-swagger2:2.6.1'

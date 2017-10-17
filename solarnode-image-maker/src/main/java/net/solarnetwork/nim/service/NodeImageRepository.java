@@ -23,6 +23,7 @@
 package net.solarnetwork.nim.service;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 
 /**
  * API for SolarNode image resources.
@@ -33,11 +34,11 @@ import net.solarnetwork.nim.domain.SolarNodeImage;
 public interface NodeImageRepository {
 
   /**
-   * Returns all available images.
+   * Returns all available image infos.
    * 
    * @return all entities
    */
-  Iterable<SolarNodeImage> findAll();
+  Iterable<SolarNodeImageInfo> findAll();
 
   /**
    * Retrieves a SolarNodeImage by its id.

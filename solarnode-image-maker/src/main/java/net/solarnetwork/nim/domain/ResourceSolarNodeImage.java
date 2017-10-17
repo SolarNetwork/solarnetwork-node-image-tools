@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * ResourceSolarNodeImage.java - 18/10/2017 10:47:29 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -25,25 +25,41 @@ package net.solarnetwork.nim.domain;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.springframework.core.io.Resource;
+
 /**
- * API for a SolarNode OS image resource.
+ * A {@link Resource} based node image.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public class ResourceSolarNodeImage implements SolarNodeImage {
+
+  private final SolarNodeImageInfo info;
+  private final Resource imageResource;
 
   /**
-   * Get an input stream for the image contents.
+   * Constructor.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @param info
+   *          the info
+   * @param imageResource
+   *          the image resource data
    */
-  InputStream getInputStream() throws IOException;
+  public ResourceSolarNodeImage(SolarNodeImageInfo info, Resource imageResource) {
+    super();
+    this.info = info;
+    this.imageResource = imageResource;
+  }
+
+  @Override
+  public String getId() {
+    return info.getId();
+  }
+
+  @Override
+  public InputStream getInputStream() throws IOException {
+    return imageResource.getInputStream();
+  }
 
 }

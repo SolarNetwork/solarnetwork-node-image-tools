@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * SolarNodeImageInfo.java - 18/10/2017 7:45:11 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,28 +22,19 @@
 
 package net.solarnetwork.nim.domain;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 /**
- * API for a SolarNode OS image resource.
+ * Metadata about a SolarNode image.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public interface SolarNodeImageInfo {
 
   /**
-   * Get an input stream for the image contents.
+   * Get a unique identifier for this image.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @return the unique ID
    */
-  InputStream getInputStream() throws IOException;
+  String getId();
 
 }

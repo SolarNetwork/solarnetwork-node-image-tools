@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * BasicSolarNodeImageInfo.java - 18/10/2017 9:02:36 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,28 +22,28 @@
 
 package net.solarnetwork.nim.domain;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * API for a SolarNode OS image resource.
+ * Basic immutable implementation of {@link SolarNodeImageInfo}.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
 
-  /**
-   * Get an input stream for the image contents.
-   * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
-   */
-  InputStream getInputStream() throws IOException;
+  private final String id;
+
+  @JsonCreator
+  public BasicSolarNodeImageInfo(@JsonProperty("id") String id) {
+    super();
+    this.id = id;
+  }
+
+  @Override
+  public String getId() {
+    return id;
+  }
 
 }

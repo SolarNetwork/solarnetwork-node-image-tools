@@ -22,6 +22,27 @@
 
 package net.solarnetwork.nim.service.impl;
 
+import static com.spotify.hamcrest.pojo.IsPojo.pojo;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThat;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.util.FileCopyUtils;
+
+import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+
 /**
  * Test cases for the {@link FileSystemNodeImageRepository} class.
  * 
@@ -29,5 +50,37 @@ package net.solarnetwork.nim.service.impl;
  * @version 1.0
  */
 public class FileSystemNodeImageRepositoryTests {
-  // TODO write tests
+
+  private FileSystemNodeImageRepository repo;
+
+  @Before
+  public void setup() throws URISyntaxException {
+    URL foobarUrl = getClass().getResource("repo/foobar.json");
+    Path root = Paths.get(foobarUrl.toURI()).getParent();
+    repo = new FileSystemNodeImageRepository(root);
+  }
+
+  @Test
+  public void listAll() {
+    Iterable<SolarNodeImageInfo> result = repo.findAll();
+    assertThat("Never null", result, notNullValue());
+    assertThat("Image list", result,
+        contains(pojo(SolarNodeImageInfo.class).withProperty("id", is("foobar"))));
+  }
+
+  @Test
+  public void getImage() throws IOException {
+    SolarNodeImage image = repo.findOne("foobar");
+    assertThat("Image ID", image.getId(), is("foobar"));
+    String data = FileCopyUtils
+        .copyToString(new InputStreamReader(image.getInputStream(), "UTF-8"));
+    assertThat("Image contents", data, is("Hello, world."));
+  }
+
+  @Test
+  public void getImageNotFound() throws IOException {
+    SolarNodeImage image = repo.findOne("does-not-exist");
+    assertThat(image, nullValue());
+  }
+
 }

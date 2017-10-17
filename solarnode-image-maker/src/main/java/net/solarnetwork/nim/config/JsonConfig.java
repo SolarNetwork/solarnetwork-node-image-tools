@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * JsonConfig.java - 18/10/2017 9:26:40 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -20,30 +20,38 @@
  * ==================================================================
  */
 
-package net.solarnetwork.nim.domain;
+package net.solarnetwork.nim.config;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
- * API for a SolarNode OS image resource.
+ * Global JSON mapping configuration.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+@Configuration
+public class JsonConfig {
 
   /**
-   * Get an input stream for the image contents.
+   * Add customization to the Spring-managed ObjectMapper.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @return the ObjectMapper customizer
    */
-  InputStream getInputStream() throws IOException;
+  @Bean
+  public Jackson2ObjectMapperBuilderCustomizer loxoneObjectMapperSupport() {
+    return new Jackson2ObjectMapperBuilderCustomizer() {
+
+      @Override
+      public void customize(Jackson2ObjectMapperBuilder jacksonObjectMapperBuilder) {
+        jacksonObjectMapperBuilder.serializationInclusion(Include.NON_ABSENT);
+      }
+    };
+  }
 
 }
