@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * MultipartFileSolarNodeImageResource.java - 19/10/2017 6:50:23 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -20,48 +20,50 @@
  * ==================================================================
  */
 
-package net.solarnetwork.nim.domain;
+package net.solarnetwork.nim.web;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import net.solarnetwork.nim.domain.SolarNodeImageResource;
+
 /**
- * API for a SolarNode OS image resource.
+ * {@link SolarNodeImageResource} for a {@link MultipartFile}.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public class MultipartFileSolarNodeImageResource implements SolarNodeImageResource {
+
+  private final MultipartFile part;
 
   /**
-   * Get an input stream for the image contents.
+   * Constructor.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @param part
+   *          the part to use
    */
-  InputStream getInputStream() throws IOException;
+  public MultipartFileSolarNodeImageResource(MultipartFile part) {
+    super();
+    this.part = part;
+  }
 
-  /**
-   * Get a filename for the image.
-   * 
-   * @return the filename
-   */
-  String getFilename();
+  @Override
+  public InputStream getInputStream() throws IOException {
+    return part.getInputStream();
+  }
 
-  /**
-   * Get the content length of the image data, if known.
-   * 
-   * <p>
-   * If the length is not known, this method should return something less than 1.
-   * </p>
-   * 
-   * @return the content length, or {@literal 0} if not known
-   */
-  long contentLength();
+  @Override
+  public String getFilename() {
+    return part.getOriginalFilename();
+  }
+
+  @Override
+  public void transferTo(File dest) throws IOException, IllegalStateException {
+    part.transferTo(dest);
+  }
 
 }

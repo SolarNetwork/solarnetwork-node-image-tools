@@ -41,7 +41,7 @@ public interface NodeImageRepository {
   Iterable<SolarNodeImageInfo> findAll();
 
   /**
-   * Retrieves a SolarNodeImage by its id.
+   * Retrieves a SolarNodeImage by its ID.
    * 
    * @param id
    *          must not be {@literal null}.
@@ -50,5 +50,16 @@ public interface NodeImageRepository {
    *           if {@code id} is {@literal null}
    */
   SolarNodeImage findOne(String id);
+
+  /**
+   * Retrieves a compressed SolarNodeImage by its ID.
+   * 
+   * @param id
+   *          must not be {@literal null}.
+   * @return the entity with the given id or {@literal null} if none found
+   * @throws IllegalArgumentException
+   *           if {@code id} is {@literal null}
+   */
+  SolarNodeImage findOneCompressed(String id);
 
 }

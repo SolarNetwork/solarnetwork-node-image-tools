@@ -22,18 +22,37 @@
 
 package net.solarnetwork.nim.web;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.ResponseEntity.BodyBuilder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.annotations.ApiOperation;
+import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
+import net.solarnetwork.nim.domain.SolarNodeImageResource;
 import net.solarnetwork.nim.service.NodeImageRepository;
+import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -43,18 +62,30 @@ import net.solarnetwork.web.domain.Response;
  * @version 1.0
  */
 @RestController
-@RequestMapping(path = "/api/v1/images", method = RequestMethod.GET)
+@CrossOrigin
+@RequestMapping(path = "/api/v1/images")
 public class NodeImageController {
 
   private final NodeImageRepository nodeImageRepo;
+  private final NodeImageService nodeImageService;
 
+  /**
+   * Constructor.
+   * 
+   * @param nodeImageRepo
+   *          the repository of base node images
+   * @param nodeImageService
+   *          the service for customizing the images with
+   */
   @Autowired
-  public NodeImageController(NodeImageRepository nodeImageRepo) {
+  public NodeImageController(@Qualifier("source") NodeImageRepository nodeImageRepo,
+      NodeImageService nodeImageService) {
     super();
     this.nodeImageRepo = nodeImageRepo;
+    this.nodeImageService = nodeImageService;
   }
 
-  @RequestMapping("/infos")
+  @GetMapping("/infos")
   @ApiOperation(value = "", notes = "Get all available image info.")
   public Response<List<SolarNodeImageInfo>> allImages() {
     Iterable<SolarNodeImageInfo> iterable = nodeImageRepo.findAll();
@@ -63,4 +94,73 @@ public class NodeImageController {
     return Response.response(result);
   }
 
+  /**
+   * Customize an image.
+   * 
+   * @param imageId
+   *          the ID of the base image to customize
+   * @param key
+   *          a unique key that is required for future checks on the result
+   * @param dataFiles
+   *          a set of data file resources to customize the image with
+   * @return a receipt
+   */
+  @PostMapping("/create/{imageId}/{key}")
+  public Response<SolarNodeImageReceipt> customizeImage(@PathVariable("imageId") String imageId,
+      @PathVariable("key") String key, @RequestParam("dataFile") MultipartFile[] dataFiles) {
+    List<SolarNodeImageResource> resources = new ArrayList<>(dataFiles.length);
+    for (MultipartFile dataFile : dataFiles) {
+      resources.add(new MultipartFileSolarNodeImageResource(dataFile));
+    }
+    SolarNodeImage image = nodeImageRepo.findOne(imageId);
+    try {
+      SolarNodeImageReceipt receipt = nodeImageService.createImage(key, image, resources, null);
+      return Response.response(receipt);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Get a custom image creation receipt.
+   * 
+   * @param key
+   *          the same unique key previously passed to
+   *          {@link #customizeImage(String, String, MultipartFile[])}
+   * @param receiptId
+   *          the ID of the receipt to get
+   * @return the receipt
+   */
+  @GetMapping("/receipt/{receiptId}/{key}")
+  public Response<SolarNodeImageReceipt> getReceipt(String key, String receiptId) {
+    SolarNodeImageReceipt receipt = nodeImageService.getReceipt(key, receiptId);
+    return Response.response(receipt);
+  }
+
+  @GetMapping("/{receiptId}/{key}")
+  public ResponseEntity<Resource> getImageFile(String key, String receiptId) {
+    SolarNodeImageReceipt receipt = nodeImageService.getReceipt(key, receiptId);
+    if (receipt == null) {
+      return ResponseEntity.notFound().build();
+    }
+
+    if (!receipt.isDone()) {
+      // image not ready; return 503 + Retry-AFter
+      return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+          .header(HttpHeaders.RETRY_AFTER, "60").build();
+    }
+
+    try {
+      SolarNodeImage image = receipt.get();
+      BodyBuilder builder = ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+          "attachment; filename=" + image.getFilename());
+      long length = image.contentLength();
+      if (length > 0) {
+        builder.contentLength(length);
+      }
+      return builder.body(new InputStreamResource(image.getInputStream()));
+    } catch (ExecutionException | InterruptedException | IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }

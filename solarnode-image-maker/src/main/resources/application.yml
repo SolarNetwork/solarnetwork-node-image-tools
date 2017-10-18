@@ -26,6 +26,9 @@ server:
 spring:
   mvc.formcontent.putfilter.enabled: false
   resources.cache-period: 86400
+  http.multipart:
+    max-file-size: 250MB
+    max-request-size: 250MB
 
 logging:
   pattern:

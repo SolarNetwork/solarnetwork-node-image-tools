@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * SolarNodeImageResource.java - 19/10/2017 6:42:19 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,46 +22,45 @@
 
 package net.solarnetwork.nim.domain;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+
+import org.springframework.core.io.InputStreamSource;
 
 /**
- * API for a SolarNode OS image resource.
+ * A resource to apply to a node image.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public interface SolarNodeImageResource extends InputStreamSource {
 
   /**
-   * Get an input stream for the image contents.
+   * Return the filename of the resource.
    * 
    * <p>
-   * This stream should be an uncompressed stream of the raw image data.
+   * This is expected to return the desired filename of the resource, which for a
+   * {@code MultipartFile} would be the <i>original</i> filename.
    * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
-   */
-  InputStream getInputStream() throws IOException;
-
-  /**
-   * Get a filename for the image.
-   * 
-   * @return the filename
    */
   String getFilename();
 
   /**
-   * Get the content length of the image data, if known.
+   * Transfer the resource to the given destination file, if possible.
    * 
    * <p>
-   * If the length is not known, this method should return something less than 1.
+   * This method is expected to abide by the same rules as outlined in
+   * {@link org.springframework.web.multipart.MultipartFile#transferTo(File)}, namely this method
+   * can only be called once per instance.
    * </p>
    * 
-   * @return the content length, or {@literal 0} if not known
+   * @param dest
+   *          the destination to transfer the resource to
+   * @throws IOException
+   *           in case of reading or writing errors
+   * @throws IllegalStateException
+   *           if the file has already been moved in the filesystem and is not available anymore for
+   *           another transfer
    */
-  long contentLength();
-
+  void transferTo(File dest) throws IOException, IllegalStateException;
 }

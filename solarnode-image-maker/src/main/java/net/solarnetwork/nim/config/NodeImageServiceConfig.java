@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * NodeImageServiceConfig.java - 19/10/2017 11:34:44 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -20,48 +20,34 @@
  * ==================================================================
  */
 
-package net.solarnetwork.nim.domain;
+package net.solarnetwork.nim.config;
 
-import java.io.IOException;
-import java.io.InputStream;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
+import net.solarnetwork.nim.service.impl.GuestfsNodeImageService;
 
 /**
- * API for a SolarNode OS image resource.
+ * Configuration for the node image service.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+@Configuration
+public class NodeImageServiceConfig {
 
-  /**
-   * Get an input stream for the image contents.
-   * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
-   */
-  InputStream getInputStream() throws IOException;
+  @Autowired
+  @Qualifier("dest")
+  private UpdatableNodeImageRepository destRepository;
 
-  /**
-   * Get a filename for the image.
-   * 
-   * @return the filename
-   */
-  String getFilename();
-
-  /**
-   * Get the content length of the image data, if known.
-   * 
-   * <p>
-   * If the length is not known, this method should return something less than 1.
-   * </p>
-   * 
-   * @return the content length, or {@literal 0} if not known
-   */
-  long contentLength();
+  @Bean
+  public GuestfsNodeImageService nodeImageService() {
+    GuestfsNodeImageService nis = new GuestfsNodeImageService();
+    nis.setNodeImageRepository(destRepository);
+    return nis;
+  }
 
 }

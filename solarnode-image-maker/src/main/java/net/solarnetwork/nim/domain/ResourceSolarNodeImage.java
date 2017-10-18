@@ -27,6 +27,8 @@ import java.io.InputStream;
 
 import org.springframework.core.io.Resource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * A {@link Resource} based node image.
  * 
@@ -57,9 +59,44 @@ public class ResourceSolarNodeImage implements SolarNodeImage {
     return info.getId();
   }
 
+  @JsonIgnore
   @Override
   public InputStream getInputStream() throws IOException {
     return imageResource.getInputStream();
+  }
+
+  @Override
+  public String getFilename() {
+    return imageResource.getFilename();
+  }
+
+  @Override
+  public long contentLength() {
+    try {
+      return imageResource.contentLength();
+    } catch (IOException e) {
+      return 0;
+    }
+  }
+
+  /**
+   * Get the source info instance.
+   * 
+   * @return the info
+   */
+  @JsonIgnore
+  public SolarNodeImageInfo getInfo() {
+    return info;
+  }
+
+  /**
+   * Get the source resource instance.
+   * 
+   * @return the resource
+   */
+  @JsonIgnore
+  public Resource getImageResource() {
+    return imageResource;
   }
 
 }

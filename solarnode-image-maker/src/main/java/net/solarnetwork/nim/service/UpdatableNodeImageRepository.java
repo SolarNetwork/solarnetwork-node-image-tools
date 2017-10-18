@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * UpdatableNodeImageRepository.java - 19/10/2017 10:39:05 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -20,48 +20,29 @@
  * ==================================================================
  */
 
-package net.solarnetwork.nim.domain;
+package net.solarnetwork.nim.service;
 
-import java.io.IOException;
-import java.io.InputStream;
+import net.solarnetwork.nim.domain.SolarNodeImage;
 
 /**
- * API for a SolarNode OS image resource.
+ * Extension of {@link NodeImageRepository} that allows updates.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public interface UpdatableNodeImageRepository extends NodeImageRepository {
 
   /**
-   * Get an input stream for the image contents.
+   * Saves a given node image.
    * 
    * <p>
-   * This stream should be an uncompressed stream of the raw image data.
+   * This method must physically copy the image data into the repository.
    * </p>
    * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @param image
+   *          the image to save
+   * @return the saved image
    */
-  InputStream getInputStream() throws IOException;
-
-  /**
-   * Get a filename for the image.
-   * 
-   * @return the filename
-   */
-  String getFilename();
-
-  /**
-   * Get the content length of the image data, if known.
-   * 
-   * <p>
-   * If the length is not known, this method should return something less than 1.
-   * </p>
-   * 
-   * @return the content length, or {@literal 0} if not known
-   */
-  long contentLength();
+  SolarNodeImage save(SolarNodeImage image);
 
 }

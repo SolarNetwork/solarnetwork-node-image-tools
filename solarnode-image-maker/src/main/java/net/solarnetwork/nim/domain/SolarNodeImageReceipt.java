@@ -1,5 +1,5 @@
 /* ==================================================================
- * SolarNodeImage.java - 17/10/2017 5:35:34 PM
+ * SolarNodeImageReceipt.java - 18/10/2017 7:23:25 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,46 +22,25 @@
 
 package net.solarnetwork.nim.domain;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.concurrent.Future;
 
 /**
- * API for a SolarNode OS image resource.
+ * A receipt and status information about an asynchronous image task.
+ * 
+ * <p>
+ * The {@link #get()} method will return when the custom node image work is complete.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public interface SolarNodeImage extends SolarNodeImageInfo {
+public interface SolarNodeImageReceipt extends Future<SolarNodeImage> {
 
   /**
-   * Get an input stream for the image contents.
+   * Get a unique ID for this work.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
-   * @return the input stream
-   * @throws IOException
-   *           if there is a problem creating the stream
+   * @return the unique ID
    */
-  InputStream getInputStream() throws IOException;
-
-  /**
-   * Get a filename for the image.
-   * 
-   * @return the filename
-   */
-  String getFilename();
-
-  /**
-   * Get the content length of the image data, if known.
-   * 
-   * <p>
-   * If the length is not known, this method should return something less than 1.
-   * </p>
-   * 
-   * @return the content length, or {@literal 0} if not known
-   */
-  long contentLength();
+  String getId();
 
 }

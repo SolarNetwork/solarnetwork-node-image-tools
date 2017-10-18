@@ -24,6 +24,7 @@ package net.solarnetwork.nim.config;
 
 import java.io.File;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,19 +41,35 @@ import net.solarnetwork.nim.service.impl.FileSystemNodeImageRepository;
 @Configuration
 public class NodeImageRepositoryConfig {
 
-  @Value("${repo.fs.path:var/repo}")
-  private File fsRepoRootDirectory = new File("var/repo");
+  @Value("${repo.source.fs.path:var/repo}")
+  private File fsSourceRepoRootDirectory = new File("var/repo");
+
+  @Value("${repo.dest.fs.path:/var/tmp/node-image-repo}")
+  private File fsDestRepoRootDirectory = new File("/var/tmp/node-image-repo");
 
   @Bean
   @Profile({ "default", "development" })
-  FileSystemNodeImageRepository fsNodeImageRepository() {
-    if (!fsRepoRootDirectory.isDirectory()) {
-      if (!fsRepoRootDirectory.mkdirs()) {
-        throw new RuntimeException("FS repo root " + fsRepoRootDirectory.getAbsolutePath()
+  @Qualifier("source")
+  public FileSystemNodeImageRepository fsSourceNodeImageRepository() {
+    if (!fsSourceRepoRootDirectory.isDirectory()) {
+      if (!fsSourceRepoRootDirectory.mkdirs()) {
+        throw new RuntimeException("FS src repo root " + fsSourceRepoRootDirectory.getAbsolutePath()
             + " does not exist and unable to create");
       }
     }
-    return new FileSystemNodeImageRepository(fsRepoRootDirectory.toPath());
+    return new FileSystemNodeImageRepository(fsSourceRepoRootDirectory.toPath());
+  }
+
+  @Bean
+  @Qualifier("dest")
+  public FileSystemNodeImageRepository fsDestNodeImageRepository() {
+    if (!fsDestRepoRootDirectory.isDirectory()) {
+      if (!fsDestRepoRootDirectory.mkdirs()) {
+        throw new RuntimeException("FS dest repo root " + fsDestRepoRootDirectory.getAbsolutePath()
+            + " does not exist and unable to create");
+      }
+    }
+    return new FileSystemNodeImageRepository(fsDestRepoRootDirectory.toPath());
   }
 
 }

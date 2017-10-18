@@ -22,6 +22,8 @@
 
 package net.solarnetwork.nim.service.impl;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.util.FileCopyUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +42,7 @@ import net.solarnetwork.nim.domain.ResourceSolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.service.NodeImageRepository;
+import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingResource;
 
 /**
@@ -48,7 +52,7 @@ import net.solarnetwork.nim.util.DecompressingResource;
  * @author matt
  * @version 1.0
  */
-public class FileSystemNodeImageRepository implements NodeImageRepository {
+public class FileSystemNodeImageRepository implements UpdatableNodeImageRepository {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
       .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
@@ -91,29 +95,74 @@ public class FileSystemNodeImageRepository implements NodeImageRepository {
 
   @Override
   public SolarNodeImage findOne(String id) {
-    final String imagePathsPrefix = id + ".";
-    final String imageInfoPath = id + ".json";
     try {
-      // get paths to the metadata AND any associated image (for which we don't know the extension)
-      List<Path> imagePaths = Files.walk(rootDirectory)
-          .filter(p -> p.getFileName().toString().startsWith(imagePathsPrefix))
-          .collect(Collectors.toList());
-      Path infoPath = imagePaths.stream()
-          .filter(p -> p.getFileName().toString().equals(imageInfoPath)).findFirst().orElse(null);
-      if (infoPath == null) {
-        return null;
+      ResourceSolarNodeImage result = findOneInternal(id);
+      if (result != null) {
+        result = new ResourceSolarNodeImage(result.getInfo(),
+            new DecompressingResource(result.getImageResource()));
       }
-      Path imagePath = imagePaths.stream()
-          .filter(p -> !p.getFileName().toString().equals(imageInfoPath)).findFirst().orElse(null);
-      if (imagePath == null) {
-        return null;
-      }
-      SolarNodeImageInfo info = infoFromJsonFile(infoPath);
-      FileSystemResource rsrc = new FileSystemResource(imagePath.toFile());
-      return new ResourceSolarNodeImage(info, new DecompressingResource(rsrc));
+      return result;
     } catch (IOException e) {
       throw new RuntimeException("Error listing node image infos: " + e.getMessage(), e);
     }
+  }
+
+  @Override
+  public SolarNodeImage findOneCompressed(String id) {
+    try {
+      return findOneInternal(id);
+    } catch (IOException e) {
+      throw new RuntimeException("Error listing node image infos: " + e.getMessage(), e);
+    }
+  }
+
+  private ResourceSolarNodeImage findOneInternal(String id) throws IOException {
+    final String imagePathsPrefix = id + ".";
+    final String imageInfoPath = id + ".json";
+
+    // get paths to the metadata AND any associated image (for which we don't know the extension)
+    List<Path> imagePaths = Files.walk(rootDirectory)
+        .filter(p -> p.getFileName().toString().startsWith(imagePathsPrefix))
+        .collect(Collectors.toList());
+    Path infoPath = imagePaths.stream()
+        .filter(p -> p.getFileName().toString().equals(imageInfoPath)).findFirst().orElse(null);
+    if (infoPath == null) {
+      return null;
+    }
+    Path imagePath = imagePaths.stream()
+        .filter(p -> !p.getFileName().toString().equals(imageInfoPath)).findFirst().orElse(null);
+    if (imagePath == null) {
+      return null;
+    }
+    SolarNodeImageInfo info = infoFromJsonFile(infoPath);
+    FileSystemResource rsrc = new FileSystemResource(imagePath.toFile());
+    return new ResourceSolarNodeImage(info, rsrc);
+  }
+
+  @Override
+  public SolarNodeImage save(SolarNodeImage image) {
+    String id = image.getId();
+    String jsonFilename = id + ".json";
+    Path jsonFile = rootDirectory.resolve(jsonFilename);
+    SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id);
+    try {
+      OBJECT_MAPPER.writeValue(jsonFile.toFile(), info);
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing image metadata to " + jsonFile, e);
+    }
+    String filename = image.getFilename();
+    if (filename == null) {
+      filename = id;
+    }
+    Path file = rootDirectory.resolve(filename);
+    try {
+      FileCopyUtils.copy(image.getInputStream(),
+          new BufferedOutputStream(new FileOutputStream(file.toFile())));
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing image data to " + file, e);
+    }
+    FileSystemResource rsrc = new FileSystemResource(file.toFile());
+    return new ResourceSolarNodeImage(info, rsrc);
   }
 
 }

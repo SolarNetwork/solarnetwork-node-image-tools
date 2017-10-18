@@ -1,5 +1,5 @@
 /* ==================================================================
- * DecompressingResource.java - 18/10/2017 11:11:40 AM
+ * CompressingResource.java - 19/10/2017 10:53:13 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -34,49 +34,48 @@ import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.Resource;
 
 /**
- * A {@link Resource} that decompresses another {@link Resource}.
+ * A {@link Resource} that compresses another {@link Resource}.
  * 
  * <p>
- * This implementation uses the Apache Commons Compression library to return decompressing
+ * This implementation uses the Apache Commons Compression library to return compressing
  * {@link InputStream} instances from {@link #getInputStream()}.
  * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public class DecompressingResource extends AbstractResource {
+public class CompressingResource extends AbstractResource {
 
   private final Resource source;
-
-  private String compressionType;
+  private final String compressionType;
 
   /**
    * Constructor.
    * 
    * @param source
    *          the source (compressed) resource
+   * @param compressionType
+   *          the {@link CompressorStreamFactory} compression type to use
    */
-  public DecompressingResource(Resource source) {
+  public CompressingResource(Resource source, String compressionType) {
     super();
     this.source = source;
+    this.compressionType = compressionType;
   }
 
   @Override
   public String getDescription() {
-    return "DecompressingResource{source=" + source + "}";
+    return "CompressingResource{source=" + source + ",compressionType=" + compressionType + "}";
   }
 
   @Override
   public InputStream getInputStream() throws IOException {
     BufferedInputStream in = new BufferedInputStream(source.getInputStream());
     try {
-      if (compressionType == null) {
-        compressionType = CompressorStreamFactory.detect(in);
-      }
       return new CompressorStreamFactory().createCompressorInputStream(compressionType, in);
     } catch (CompressorException e) {
-      throw new IOException(
-          "Error handling compression of image " + source + ": " + e.getMessage());
+      throw new IOException("Error handling " + compressionType + " compression of image " + source
+          + ": " + e.getMessage());
     }
   }
 
@@ -92,23 +91,15 @@ public class DecompressingResource extends AbstractResource {
 
   @Override
   public String getFilename() {
-    return source.getFilename();
+    return super.getFilename() + "." + compressionType;
   }
 
   /**
-   * Get the detected compression type.
+   * Get the configured compression type.
    * 
-   * @return the detected compression type
+   * @return the configured compression type
    */
   public String getCompressionType() {
-    if (compressionType == null) {
-      // call getInputStream for detection
-      try (InputStream in = getInputStream()) {
-        // nothing here
-      } catch (IOException e) {
-        // ignore here
-      }
-    }
     return compressionType;
   }
 

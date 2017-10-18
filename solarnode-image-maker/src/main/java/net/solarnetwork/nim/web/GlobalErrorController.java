@@ -74,8 +74,17 @@ public class GlobalErrorController implements ErrorController {
     return ERROR_PATH;
   }
 
+  /**
+   * Handle an error.
+   * 
+   * @param request
+   *          the request
+   * @param response
+   *          the response
+   * @return the result body
+   */
   @RequestMapping
-  Response<?> error(HttpServletRequest request, HttpServletResponse response) {
+  public Response<?> error(HttpServletRequest request, HttpServletResponse response) {
     Map<String, Object> data = getErrorAttributes(request, debug);
     String message = (String) data.remove("message");
     return new Response<>(Boolean.FALSE, String.valueOf(response.getStatus()), message, data);
