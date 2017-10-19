@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
 
 /**
@@ -115,6 +116,18 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
   @Override
   public double getPercentComplete() {
     return tracker.getOverallPercentComplete();
+  }
+
+  @Override
+  public SolarNodeImageInfo getImageInfo() {
+    if (isDone()) {
+      try {
+        return get();
+      } catch (Exception e) {
+        tracker.setMessage(e.getMessage());
+      }
+    }
+    return null;
   }
 
 }

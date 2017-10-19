@@ -65,4 +65,11 @@ public interface SolarNodeImageReceipt extends Future<SolarNodeImage> {
    * @return the amount of work completed
    */
   double getPercentComplete();
+
+  /**
+   * Get information about the final image, once ready.
+   * 
+   * @return the finished image info, or {@literal null} if not available yet
+   */
+  SolarNodeImageInfo getImageInfo();
 }

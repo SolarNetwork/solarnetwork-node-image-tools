@@ -167,11 +167,11 @@ public abstract class AbstractNodeImageService implements NodeImageService {
             tracker.setMessage("Compressing image");
             Resource imageFileResource = new FileSystemResource(result.getImageFile().toFile());
             ResourceSolarNodeImage image = new ResourceSolarNodeImage(
-                new BasicSolarNodeImageInfo(taskId, null, sourceImage.getContentLength(), null,
-                    imageFileResource.contentLength()),
+                new BasicSolarNodeImageInfo(taskId, null, 0, null, sourceImage.getContentLength()),
                 imageFileResource);
             SolarNodeImage output = nodeImageRepository.save(image, tracker);
             tracker.completeStep(); // 3
+            tracker.setMessage("Done");
             return output;
           }
           throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
