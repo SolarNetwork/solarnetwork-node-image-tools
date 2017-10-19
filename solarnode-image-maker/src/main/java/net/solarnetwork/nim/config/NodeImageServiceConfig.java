@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.service.impl.GuestfsNodeImageService;
@@ -43,11 +44,21 @@ public class NodeImageServiceConfig {
   @Qualifier("dest")
   private UpdatableNodeImageRepository destRepository;
 
+  /**
+   * Get the node image service.
+   * 
+   * @return the node image service
+   */
   @Bean
   public GuestfsNodeImageService nodeImageService() {
     GuestfsNodeImageService nis = new GuestfsNodeImageService();
     nis.setNodeImageRepository(destRepository);
     return nis;
+  }
+
+  @Scheduled(fixedDelay = 60 * 60 * 1000L, initialDelay = 60 * 60 * 1000L)
+  public void nodeImageServiceRemoveExpiredReceipts() {
+    nodeImageService().cleanExpiredReceipts();
   }
 
 }
