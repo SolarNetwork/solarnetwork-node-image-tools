@@ -39,7 +39,8 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 
@@ -54,6 +55,7 @@ import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingResource;
+import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
 
 /**
  * {@link NodeImageRepository} implementation that uses a file system hierarchy to store node images
@@ -70,6 +72,8 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
 
   private final Path rootDirectory;
   private String compressionType = "xz";
+
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
   public FileSystemNodeImageRepository(Path rootDirectory) {
     super();
@@ -158,59 +162,67 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     if (filename == null) {
       filename = id;
     }
-    Path file = rootDirectory.resolve(filename + "." + compressionType);
+    Path file = rootDirectory.resolve(
+        MaxCompressorStreamFactory.getCompressedFilename(MaxCompressorStreamFactory.XZ, filename));
 
     // compute the digests of both the input and output streams while copying...
     MessageDigest inputDigest = DigestUtils.getSha256Digest();
     MessageDigest outputDigest = DigestUtils.getSha256Digest();
 
     try (InputStream in = image.getInputStream();
-        OutputStream out = new CompressorStreamFactory().createCompressorOutputStream(
-            compressionType, new BufferedOutputStream(new FileOutputStream(file.toFile())))) {
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
+      log.info("Saving compressed image {} to {}", id, file);
       FileCopyUtils.copy(new FilterInputStream(in) {
 
         @Override
         public int read() throws IOException {
           int b = in.read();
-          inputDigest.update((byte) b);
+          if (b >= 0) {
+            inputDigest.update((byte) b);
+          }
           return b;
         }
 
         @Override
         public int read(byte[] buf, int offset, int len) throws IOException {
           int count = in.read(buf, offset, len);
-          inputDigest.update(buf, offset, count);
+          if (count > 0) {
+            inputDigest.update(buf, offset, count);
+          }
           return count;
         }
 
         @Override
         public int read(byte[] buf) throws IOException {
           int count = in.read(buf);
-          inputDigest.update(buf, 0, count);
+          if (count > 0) {
+            inputDigest.update(buf, 0, count);
+          }
           return count;
         }
 
-      }, new FilterOutputStream(out) {
+      }, new MaxCompressorStreamFactory().createCompressorOutputStream(compressionType,
+          new FilterOutputStream(out) {
 
-        @Override
-        public void write(byte[] buf, int offset, int len) throws IOException {
-          outputDigest.update(buf, offset, len);
-          out.write(buf, offset, len);
-        }
+            @Override
+            public void write(byte[] buf, int offset, int len) throws IOException {
+              outputDigest.update(buf, offset, len);
+              out.write(buf, offset, len);
+            }
 
-        @Override
-        public void write(byte[] buf) throws IOException {
-          outputDigest.update(buf);
-          out.write(buf);
-        }
+            @Override
+            public void write(byte[] buf) throws IOException {
+              outputDigest.update(buf);
+              out.write(buf);
+            }
 
-        @Override
-        public void write(int b) throws IOException {
-          outputDigest.update((byte) b);
-          out.write(b);
-        }
+            @Override
+            public void write(int b) throws IOException {
+              outputDigest.update((byte) b);
+              out.write(b);
+            }
 
-      });
+          }));
 
       String jsonFilename = id + ".json";
       Path jsonFile = rootDirectory.resolve(jsonFilename);
