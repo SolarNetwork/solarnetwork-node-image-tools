@@ -127,17 +127,19 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     final Path root = Files.createTempDirectory(stagingDir, "node-image");
     final Path imageDest = root.resolve(sourceImage.getId() + ".img");
 
+    // copy input data on calling thread, so things like multipart temp files aren't deleted
+    final List<Path> resourceFiles = new ArrayList<>(8);
+    for (SolarNodeImageResource rsrc : resources) {
+      Path dest = root.resolve(rsrc.getFilename());
+      resourceFiles.add(dest);
+      log.debug("Transferring resource {} to {}", rsrc.getFilename(), dest);
+      rsrc.transferTo(dest.toFile());
+    }
+
     Callable<SolarNodeImage> task = new Callable<SolarNodeImage>() {
 
       @Override
       public SolarNodeImage call() throws Exception {
-        List<Path> resourceFiles = new ArrayList<>(8);
-        for (SolarNodeImageResource rsrc : resources) {
-          Path dest = root.resolve(rsrc.getFilename());
-          resourceFiles.add(dest);
-          log.debug("Transferring resource {} to {}", rsrc.getFilename(), dest);
-          rsrc.transferTo(dest.toFile());
-        }
         log.debug("Transferring image {} to {}", sourceImage.getId(), imageDest);
         FileCopyUtils.copy(sourceImage.getInputStream(), new FileOutputStream(imageDest.toFile()));
         ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,

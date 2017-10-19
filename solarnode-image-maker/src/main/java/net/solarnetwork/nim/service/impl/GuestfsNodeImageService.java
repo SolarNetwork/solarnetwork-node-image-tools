@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,8 +93,10 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
     ProcessBuilder pb = new ProcessBuilder(cmd);
     pb.directory(workingDir.toFile());
 
-    Map<String, String> env = parameters.entrySet().stream().filter(e -> e.getValue() != null)
-        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString()));
+    Map<String, String> env = (parameters != null
+        ? parameters.entrySet().stream().filter(e -> e.getValue() != null)
+            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString()))
+        : Collections.emptyMap());
     pb.environment().putAll(env);
 
     Path scriptFile = resources.stream()

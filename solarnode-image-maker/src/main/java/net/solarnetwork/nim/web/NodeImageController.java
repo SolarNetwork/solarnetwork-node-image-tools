@@ -132,13 +132,25 @@ public class NodeImageController {
    * @return the receipt
    */
   @GetMapping("/receipt/{receiptId}/{key}")
-  public Response<SolarNodeImageReceipt> getReceipt(String key, String receiptId) {
+  public Response<SolarNodeImageReceipt> getReceipt(@PathVariable("key") String key,
+      @PathVariable("receiptId") String receiptId) {
     SolarNodeImageReceipt receipt = nodeImageService.getReceipt(key, receiptId);
     return Response.response(receipt);
   }
 
+  /**
+   * Get the contents of an image.
+   * 
+   * @param key
+   *          the same unique key previously passed to
+   *          {@link #customizeImage(String, String, MultipartFile[])}
+   * @param receiptId
+   *          the ID of the receipt to get
+   * @return the image data
+   */
   @GetMapping("/{receiptId}/{key}")
-  public ResponseEntity<Resource> getImageFile(String key, String receiptId) {
+  public ResponseEntity<Resource> getImageFile(@PathVariable("key") String key,
+      @PathVariable("receiptId") String receiptId) {
     SolarNodeImageReceipt receipt = nodeImageService.getReceipt(key, receiptId);
     if (receipt == null) {
       return ResponseEntity.notFound().build();
