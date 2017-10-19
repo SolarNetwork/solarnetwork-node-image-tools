@@ -38,10 +38,6 @@ import net.solarnetwork.nim.service.NodeImageService;
 /**
  * {@link NodeImageService} using libguestfs.
  * 
- * <p>
- * TODO
- * </p>
- * 
  * @author matt
  * @version 1.0
  */
@@ -90,6 +86,7 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
     cmd.add("--rw"); // mount image read+write
     cmd.add(imageFile.getFileName().toString()); // assumed to be in working dir
     cmd.add("--inspector"); // auto-mount filesystems of image
+
     ProcessBuilder pb = new ProcessBuilder(cmd);
     pb.directory(workingDir.toFile());
 
@@ -106,6 +103,7 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
       throw new IllegalArgumentException(
           "No " + SCRIPT_RESOURCE_NAME_EXTENSION + " resource provided");
     }
+    log.info("Executing command {} <{}", cmd, scriptFile);
     pb.redirectInput(scriptFile.toFile());
 
     pb.command(cmd);
