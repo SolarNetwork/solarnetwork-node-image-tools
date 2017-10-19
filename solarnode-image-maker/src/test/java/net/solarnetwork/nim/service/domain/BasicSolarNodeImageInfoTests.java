@@ -23,6 +23,7 @@
 package net.solarnetwork.nim.service.domain;
 
 import static com.spotify.hamcrest.jackson.JsonMatchers.isJsonStringMatching;
+import static com.spotify.hamcrest.jackson.JsonMatchers.jsonLong;
 import static com.spotify.hamcrest.jackson.JsonMatchers.jsonObject;
 import static com.spotify.hamcrest.jackson.JsonMatchers.jsonText;
 import static com.spotify.hamcrest.pojo.IsPojo.pojo;
@@ -51,9 +52,15 @@ public class BasicSolarNodeImageInfoTests {
 
   @Test
   public void serializeAsJson() throws IOException {
-    BasicSolarNodeImageInfo info = new BasicSolarNodeImageInfo("foobar", null, null);
+    BasicSolarNodeImageInfo info = new BasicSolarNodeImageInfo("foobar", null, 1, null, 2);
     String json = OBJECT_MAPPER.writeValueAsString(info);
-    assertThat(json, isJsonStringMatching(jsonObject().where("id", is(jsonText("foobar")))));
+    // @formatter:off
+    assertThat(json, isJsonStringMatching(jsonObject()
+        .where("id", is(jsonText("foobar")))
+        .where("contentLength", is(jsonLong(1)))
+        .where("uncompressedContentLength", is(jsonLong(2)))
+        ));
+    // @formatter:on
   }
 
   @Test

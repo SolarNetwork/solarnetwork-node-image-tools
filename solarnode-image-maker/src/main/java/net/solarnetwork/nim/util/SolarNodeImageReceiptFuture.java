@@ -41,6 +41,7 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
   private final long created;
   private final String id;
   private final Future<SolarNodeImage> future;
+  private final TaskStepTracker tracker;
 
   /**
    * Constructor.
@@ -49,12 +50,16 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
    *          the receipt ID
    * @param future
    *          the task
+   * @param tracker
+   *          a step tracker
    */
-  public SolarNodeImageReceiptFuture(String id, Future<SolarNodeImage> future) {
+  public SolarNodeImageReceiptFuture(String id, Future<SolarNodeImage> future,
+      TaskStepTracker tracker) {
     super();
     this.created = System.currentTimeMillis();
     this.id = id;
     this.future = future;
+    this.tracker = tracker;
   }
 
   /**
@@ -87,6 +92,11 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
   }
 
   @Override
+  public boolean isStarted() {
+    return tracker.isStarted();
+  }
+
+  @Override
   public SolarNodeImage get() throws InterruptedException, ExecutionException {
     return future.get();
   }
@@ -95,6 +105,16 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
   public SolarNodeImage get(long timeout, TimeUnit unit)
       throws InterruptedException, ExecutionException, TimeoutException {
     return future.get(timeout, unit);
+  }
+
+  @Override
+  public String getMessage() {
+    return tracker.getMessage();
+  }
+
+  @Override
+  public double getPercentComplete() {
+    return tracker.getOverallPercentComplete();
   }
 
 }

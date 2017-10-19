@@ -69,6 +69,11 @@ public class ResourceSolarNodeImage implements SolarNodeImage {
     return info.getUncompressedSha256();
   }
 
+  @Override
+  public long getUncompressedContentLength() {
+    return info.getUncompressedContentLength();
+  }
+
   @JsonIgnore
   @Override
   public InputStream getInputStream() throws IOException {
@@ -81,11 +86,11 @@ public class ResourceSolarNodeImage implements SolarNodeImage {
   }
 
   @Override
-  public long contentLength() {
+  public long getContentLength() {
     try {
       return imageResource.contentLength();
     } catch (IOException e) {
-      return 0;
+      return info.getContentLength();
     }
   }
 

@@ -23,6 +23,7 @@
 package net.solarnetwork.nim.service;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.util.TaskStepTracker;
 
 /**
  * Extension of {@link NodeImageRepository} that allows updates.
@@ -41,8 +42,10 @@ public interface UpdatableNodeImageRepository extends NodeImageRepository {
    * 
    * @param image
    *          the image to save
+   * @param tracker
+   *          an optional tracker to update progress on
    * @return the saved image
    */
-  SolarNodeImage save(SolarNodeImage image);
+  SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker);
 
 }

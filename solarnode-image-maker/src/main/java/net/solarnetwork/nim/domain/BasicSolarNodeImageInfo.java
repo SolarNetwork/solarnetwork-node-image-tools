@@ -35,7 +35,9 @@ public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
 
   private final String id;
   private final String sha256;
+  private final long contentLength;
   private final String uncompressedSha256;
+  private final long uncompressedContentLength;
 
   /**
    * Constructor.
@@ -44,17 +46,25 @@ public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
    *          the ID of the image
    * @param sha256Hex
    *          the hex-encoded SHA256 digest of the image content
+   * @param contentLength
+   *          the length of the image content, in bytes
    * @param uncompressedSha256Hex
-   *          the hex-encoded SHA256 digest of the uncompressed image contentf
+   *          the hex-encoded SHA256 digest of the uncompressed image content
+   * @param rawContentLength
+   *          the length of the uncompressed image content, in bytes
    */
   @JsonCreator
   public BasicSolarNodeImageInfo(@JsonProperty("id") String id,
       @JsonProperty(value = "sha256", required = false) String sha256Hex,
-      @JsonProperty(value = "uncompressedSha256", required = false) String uncompressedSha256Hex) {
+      @JsonProperty(value = "contentLength", required = false) long contentLength,
+      @JsonProperty(value = "uncompressedSha256", required = false) String uncompressedSha256Hex,
+      @JsonProperty(value = "uncompressedContentLength", required = false) long rawContentLength) {
     super();
     this.id = id;
     this.sha256 = sha256Hex;
+    this.contentLength = contentLength;
     this.uncompressedSha256 = uncompressedSha256Hex;
+    this.uncompressedContentLength = rawContentLength;
   }
 
   @Override
@@ -68,8 +78,18 @@ public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
   }
 
   @Override
+  public long getContentLength() {
+    return contentLength;
+  }
+
+  @Override
   public String getUncompressedSha256() {
     return uncompressedSha256;
+  }
+
+  @Override
+  public long getUncompressedContentLength() {
+    return uncompressedContentLength;
   }
 
 }

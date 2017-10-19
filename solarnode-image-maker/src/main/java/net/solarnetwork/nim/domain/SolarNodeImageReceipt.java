@@ -43,4 +43,26 @@ public interface SolarNodeImageReceipt extends Future<SolarNodeImage> {
    */
   String getId();
 
+  /**
+   * Flag indicating if the task has started.
+   * 
+   * @return {@literal true} if the task has started, or {@literal false} if it is still queued to
+   *         start later
+   */
+  boolean isStarted();
+
+  /**
+   * Get a status message.
+   * 
+   * @return a status message
+   */
+  String getMessage();
+
+  /**
+   * Get the amount of work that has been completed, as a fractional percentage between {@literal 0}
+   * and {@literal 1}.
+   * 
+   * @return the amount of work completed
+   */
+  double getPercentComplete();
 }

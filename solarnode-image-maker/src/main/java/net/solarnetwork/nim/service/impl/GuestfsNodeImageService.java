@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImageOptions;
 import net.solarnetwork.nim.service.NodeImageService;
+import net.solarnetwork.nim.util.TaskStepTracker;
 
 /**
  * {@link NodeImageService} using libguestfs.
@@ -56,7 +57,8 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
 
   @Override
   protected ImageSetupResult createImageInternal(String key, SolarNodeImageInfo imageInfo,
-      Path imageFile, List<Path> resources, SolarNodeImageOptions options) throws IOException {
+      Path imageFile, List<Path> resources, SolarNodeImageOptions options, TaskStepTracker tracker)
+      throws IOException {
     Path workingDir = imageFile.getParent();
     ProcessBuilder pb = setupProcess(workingDir, imageFile, resources, options);
     Process proc = pb.start();

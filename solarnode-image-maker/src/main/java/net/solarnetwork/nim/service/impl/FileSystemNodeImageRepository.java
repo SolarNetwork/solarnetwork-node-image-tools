@@ -24,8 +24,6 @@ package net.solarnetwork.nim.service.impl;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,6 +37,7 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -57,6 +56,9 @@ import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingResource;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
+import net.solarnetwork.nim.util.MessageDigestOutputStream;
+import net.solarnetwork.nim.util.TaskStepTracker;
+import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
 
 /**
  * {@link NodeImageRepository} implementation that uses a file system hierarchy to store node images
@@ -157,76 +159,34 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
   }
 
   @Override
-  public SolarNodeImage save(SolarNodeImage image) {
+  public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
     String id = image.getId();
     String filename = image.getFilename();
     Path file = rootDirectory.resolve(MaxCompressorStreamFactory.getCompressedFilename(
         MaxCompressorStreamFactory.XZ, id + "." + StringUtils.getFilenameExtension(filename)));
 
     // compute the digests of both the input and output streams while copying...
+    final long expectedInputContentLength = image.getUncompressedContentLength();
     MessageDigest inputDigest = DigestUtils.getSha256Digest();
     MessageDigest outputDigest = DigestUtils.getSha256Digest();
+
+    MutableLong inputContentLength = new MutableLong(0);
+    MutableLong outputContentLength = new MutableLong(0);
 
     try (InputStream in = image.getInputStream();
         OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
       log.info("Compressing image {} to {}", image.getFilename(), file);
-      FileCopyUtils.copy(new FilterInputStream(in) {
-
-        @Override
-        public int read() throws IOException {
-          int b = in.read();
-          if (b >= 0) {
-            inputDigest.update((byte) b);
-          }
-          return b;
-        }
-
-        @Override
-        public int read(byte[] buf, int offset, int len) throws IOException {
-          int count = in.read(buf, offset, len);
-          if (count > 0) {
-            inputDigest.update(buf, offset, count);
-          }
-          return count;
-        }
-
-        @Override
-        public int read(byte[] buf) throws IOException {
-          int count = in.read(buf);
-          if (count > 0) {
-            inputDigest.update(buf, 0, count);
-          }
-          return count;
-        }
-
-      }, new MaxCompressorStreamFactory().createCompressorOutputStream(compressionType,
-          new FilterOutputStream(out) {
-
-            @Override
-            public void write(byte[] buf, int offset, int len) throws IOException {
-              outputDigest.update(buf, offset, len);
-              out.write(buf, offset, len);
-            }
-
-            @Override
-            public void write(byte[] buf) throws IOException {
-              outputDigest.update(buf);
-              out.write(buf);
-            }
-
-            @Override
-            public void write(int b) throws IOException {
-              outputDigest.update((byte) b);
-              out.write(b);
-            }
-
-          }));
+      FileCopyUtils.copy(in,
+          new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
+              new MessageDigestOutputStream(inputDigest, inputContentLength,
+                  new MaxCompressorStreamFactory().createCompressorOutputStream(compressionType,
+                      new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
 
       String jsonFilename = id + ".json";
       Path jsonFile = rootDirectory.resolve(jsonFilename);
       SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
-          new String(Hex.encodeHex(outputDigest.digest())),
-          new String(Hex.encodeHex(inputDigest.digest())));
+          new String(Hex.encodeHex(outputDigest.digest())), outputContentLength.longValue(),
+          new String(Hex.encodeHex(inputDigest.digest())), inputContentLength.longValue());
       try {
         OBJECT_MAPPER.writeValue(jsonFile.toFile(), info);
       } catch (IOException e) {

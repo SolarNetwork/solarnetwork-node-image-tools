@@ -53,15 +53,4 @@ public interface SolarNodeImage extends SolarNodeImageInfo {
    */
   String getFilename();
 
-  /**
-   * Get the content length of the image data, if known.
-   * 
-   * <p>
-   * If the length is not known, this method should return something less than 1.
-   * </p>
-   * 
-   * @return the content length, or {@literal 0} if not known
-   */
-  long contentLength();
-
 }

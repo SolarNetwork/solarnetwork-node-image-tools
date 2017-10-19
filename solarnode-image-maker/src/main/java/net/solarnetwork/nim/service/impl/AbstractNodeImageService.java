@@ -58,6 +58,8 @@ import net.solarnetwork.nim.domain.SolarNodeImageResource;
 import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.SolarNodeImageReceiptFuture;
+import net.solarnetwork.nim.util.TaskStepTracker;
+import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
 
 /**
  * Abstract base class for {@link NodeImageService} with basic common features.
@@ -138,24 +140,44 @@ public abstract class AbstractNodeImageService implements NodeImageService {
       rsrc.transferTo(dest.toFile());
     }
 
+    // steps are: 1) uncompress image 2) customize image 3) compress image
+    final TaskStepTracker tracker = new TaskStepTracker(3);
+
     Callable<SolarNodeImage> task = new Callable<SolarNodeImage>() {
 
       @Override
       public SolarNodeImage call() throws Exception {
+        tracker.start();
+        tracker.setMessage("Uncompressing source image");
         log.info("Transferring image {} to {}", sourceImage.getId(), imageDest);
         try {
+          // TODO: use DigestOutputStream to verify digest of written file
           FileCopyUtils.copy(sourceImage.getInputStream(),
-              new FileOutputStream(imageDest.toFile()));
+              new TaskStepTrackerOutputStream(sourceImage.getUncompressedContentLength(), tracker,
+                  new FileOutputStream(imageDest.toFile())));
+          tracker.completeStep(); // 1
+
+          tracker.setMessage("Customizing image");
           ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
-              options);
+              options, tracker);
+          tracker.completeStep(); // 2
+
           if (result.isSuccess() && result.getImageFile() != null) {
             // compress the image while copying into repo
+            tracker.setMessage("Compressing image");
             Resource imageFileResource = new FileSystemResource(result.getImageFile().toFile());
             ResourceSolarNodeImage image = new ResourceSolarNodeImage(
-                new BasicSolarNodeImageInfo(taskId, null, null), imageFileResource);
-            return nodeImageRepository.save(image);
+                new BasicSolarNodeImageInfo(taskId, null, sourceImage.getContentLength(), null,
+                    imageFileResource.contentLength()),
+                imageFileResource);
+            SolarNodeImage output = nodeImageRepository.save(image, tracker);
+            tracker.completeStep(); // 3
+            return output;
           }
           throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
+        } catch (Exception e) {
+          tracker.setMessage(e.getMessage());
+          throw e;
         } finally {
           // clean up
           log.info("Deleting staging dir {}", root);
@@ -165,7 +187,8 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     };
 
     Future<SolarNodeImage> result = executorService.submit(task);
-    SolarNodeImageReceiptFuture receipt = new SolarNodeImageReceiptFuture(receiptId, result);
+    SolarNodeImageReceiptFuture receipt = new SolarNodeImageReceiptFuture(receiptId, result,
+        tracker);
     receipts.put(taskId, receipt);
     return receipt;
   }
@@ -224,10 +247,13 @@ public abstract class AbstractNodeImageService implements NodeImageService {
    *          any resources to apply to the image
    * @param options
    *          options to use when customizing the image
+   * @param tracker
+   *          a step tracker
    * @return the result object
    */
   protected abstract ImageSetupResult createImageInternal(String key, SolarNodeImageInfo imageInfo,
-      Path imageFile, List<Path> resources, SolarNodeImageOptions options) throws IOException;
+      Path imageFile, List<Path> resources, SolarNodeImageOptions options, TaskStepTracker tracker)
+      throws IOException;
 
   /**
    * Set the "staging" directory where all work is performed.
