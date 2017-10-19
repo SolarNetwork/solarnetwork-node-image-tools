@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -159,11 +160,8 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
   public SolarNodeImage save(SolarNodeImage image) {
     String id = image.getId();
     String filename = image.getFilename();
-    if (filename == null) {
-      filename = id;
-    }
-    Path file = rootDirectory.resolve(
-        MaxCompressorStreamFactory.getCompressedFilename(MaxCompressorStreamFactory.XZ, filename));
+    Path file = rootDirectory.resolve(MaxCompressorStreamFactory.getCompressedFilename(
+        MaxCompressorStreamFactory.XZ, id + "." + StringUtils.getFilenameExtension(filename)));
 
     // compute the digests of both the input and output streams while copying...
     MessageDigest inputDigest = DigestUtils.getSha256Digest();
@@ -171,7 +169,7 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
 
     try (InputStream in = image.getInputStream();
         OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
-      log.info("Saving compressed image {} to {}", id, file);
+      log.info("Compressing image {} to {}", image.getFilename(), file);
       FileCopyUtils.copy(new FilterInputStream(in) {
 
         @Override
