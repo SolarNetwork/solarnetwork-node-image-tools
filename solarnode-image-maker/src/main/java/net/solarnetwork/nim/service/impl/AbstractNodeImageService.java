@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 
 import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.ResourceSolarNodeImage;
@@ -132,7 +133,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     for (SolarNodeImageResource rsrc : resources) {
       Path dest = root.resolve(rsrc.getFilename());
       resourceFiles.add(dest);
-      log.debug("Transferring resource {} to {}", rsrc.getFilename(), dest);
+      log.info("Transferring resource {} to {}", rsrc.getFilename(), dest);
       rsrc.transferTo(dest.toFile());
     }
 
@@ -140,19 +141,26 @@ public abstract class AbstractNodeImageService implements NodeImageService {
 
       @Override
       public SolarNodeImage call() throws Exception {
-        log.debug("Transferring image {} to {}", sourceImage.getId(), imageDest);
-        FileCopyUtils.copy(sourceImage.getInputStream(), new FileOutputStream(imageDest.toFile()));
-        ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
-            parameters);
-        if (result.isSuccess() && result.getImageFile() != null) {
-          // compress the image while copying into repo
-          Resource imageFileResource = new CompressingResource(
-              new FileSystemResource(result.getImageFile().toFile()), "xz");
-          ResourceSolarNodeImage image = new ResourceSolarNodeImage(
-              new BasicSolarNodeImageInfo(taskId), imageFileResource);
-          return nodeImageRepository.save(image);
+        log.info("Transferring image {} to {}", sourceImage.getId(), imageDest);
+        try {
+          FileCopyUtils.copy(sourceImage.getInputStream(),
+              new FileOutputStream(imageDest.toFile()));
+          ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
+              parameters);
+          if (result.isSuccess() && result.getImageFile() != null) {
+            // compress the image while copying into repo
+            Resource imageFileResource = new CompressingResource(
+                new FileSystemResource(result.getImageFile().toFile()), "xz");
+            ResourceSolarNodeImage image = new ResourceSolarNodeImage(
+                new BasicSolarNodeImageInfo(taskId), imageFileResource);
+            return nodeImageRepository.save(image);
+          }
+          throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
+        } finally {
+          // clean up
+          log.info("Deleting staging dir {}", root);
+          FileSystemUtils.deleteRecursively(root.toFile());
         }
-        throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
       }
     };
 
