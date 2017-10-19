@@ -22,6 +22,7 @@
 
 package net.solarnetwork.nim.service.impl;
 
+import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -154,7 +155,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
           // TODO: use DigestOutputStream to verify digest of written file
           FileCopyUtils.copy(sourceImage.getInputStream(),
               new TaskStepTrackerOutputStream(sourceImage.getUncompressedContentLength(), tracker,
-                  new FileOutputStream(imageDest.toFile())));
+                  new BufferedOutputStream(new FileOutputStream(imageDest.toFile()))));
           tracker.completeStep(); // 1
 
           tracker.setMessage("Customizing image");
@@ -164,11 +165,11 @@ public abstract class AbstractNodeImageService implements NodeImageService {
 
           if (result.isSuccess() && result.getImageFile() != null) {
             // compress the image while copying into repo
-            tracker.setMessage("Compressing image");
             Resource imageFileResource = new FileSystemResource(result.getImageFile().toFile());
             ResourceSolarNodeImage image = new ResourceSolarNodeImage(
                 new BasicSolarNodeImageInfo(taskId, null, 0, null, sourceImage.getContentLength()),
                 imageFileResource);
+            tracker.setMessage("Compressing image");
             SolarNodeImage output = nodeImageRepository.save(image, tracker);
             tracker.completeStep(); // 3
             tracker.setMessage("Done");
