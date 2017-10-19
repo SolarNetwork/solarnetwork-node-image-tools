@@ -183,8 +183,9 @@ public class NodeImageController {
 
     try {
       SolarNodeImage image = receipt.get();
-      BodyBuilder builder = ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
-          "attachment; filename=" + image.getFilename());
+      BodyBuilder builder = ResponseEntity.ok()
+          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + image.getFilename())
+          .contentType(MediaType.APPLICATION_OCTET_STREAM);
       long length = image.contentLength();
       if (length > 0) {
         builder.contentLength(length);
