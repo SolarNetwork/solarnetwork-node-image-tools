@@ -37,4 +37,18 @@ public interface SolarNodeImageInfo {
    */
   String getId();
 
+  /**
+   * Get a hex-encoded SHA-256 digest of the image contents.
+   * 
+   * @return the SHA-256 digest, or {@literal null} if not known
+   */
+  String getSha256();
+
+  /**
+   * Get a hex-encoded SHA-256 digest of the image contents when uncompressed.
+   * 
+   * @return the SHA-256 digest, or {@literal null} if not known
+   */
+  String getUncompressedSha256();
+
 }

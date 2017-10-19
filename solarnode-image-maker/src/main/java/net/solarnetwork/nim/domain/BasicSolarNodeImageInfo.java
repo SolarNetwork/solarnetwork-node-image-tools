@@ -34,16 +34,42 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
 
   private final String id;
+  private final String sha256;
+  private final String uncompressedSha256;
 
+  /**
+   * Constructor.
+   * 
+   * @param id
+   *          the ID of the image
+   * @param sha256Hex
+   *          the hex-encoded SHA256 digest of the image content
+   * @param uncompressedSha256Hex
+   *          the hex-encoded SHA256 digest of the uncompressed image contentf
+   */
   @JsonCreator
-  public BasicSolarNodeImageInfo(@JsonProperty("id") String id) {
+  public BasicSolarNodeImageInfo(@JsonProperty("id") String id,
+      @JsonProperty(value = "sha256", required = false) String sha256Hex,
+      @JsonProperty(value = "uncompressedSha256", required = false) String uncompressedSha256Hex) {
     super();
     this.id = id;
+    this.sha256 = sha256Hex;
+    this.uncompressedSha256 = uncompressedSha256Hex;
   }
 
   @Override
   public String getId() {
     return id;
+  }
+
+  @Override
+  public String getSha256() {
+    return sha256;
+  }
+
+  @Override
+  public String getUncompressedSha256() {
+    return uncompressedSha256;
   }
 
 }

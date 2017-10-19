@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
+import net.solarnetwork.nim.domain.SolarNodeImageOptions;
 import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
 import net.solarnetwork.nim.domain.SolarNodeImageResource;
 
@@ -53,14 +54,14 @@ public interface NodeImageService {
    *          the base image that serves as the starting point of the customized image
    * @param resources
    *          a set of named resources to customize the image with
-   * @param parameters
-   *          a set of parameters to use during the customization process
+   * @param options
+   *          options to use during the image customization process
    * @return a receipt for the task
    * @throws IOException
    *           if an IO error occurs
    */
   SolarNodeImageReceipt createImage(String key, SolarNodeImage sourceImage,
-      Iterable<SolarNodeImageResource> resources, Map<String, ?> parameters) throws IOException;
+      Iterable<SolarNodeImageResource> resources, SolarNodeImageOptions options) throws IOException;
 
   /**
    * Get a receipt for a given key and ID.

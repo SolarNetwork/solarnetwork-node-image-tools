@@ -59,6 +59,16 @@ public class ResourceSolarNodeImage implements SolarNodeImage {
     return info.getId();
   }
 
+  @Override
+  public String getSha256() {
+    return info.getSha256();
+  }
+
+  @Override
+  public String getUncompressedSha256() {
+    return info.getUncompressedSha256();
+  }
+
   @JsonIgnore
   @Override
   public InputStream getInputStream() throws IOException {

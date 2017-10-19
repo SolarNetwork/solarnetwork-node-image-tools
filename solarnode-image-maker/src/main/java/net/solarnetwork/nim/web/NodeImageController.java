@@ -35,6 +35,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -46,9 +47,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.swagger.annotations.ApiOperation;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.domain.SolarNodeImageOptions;
 import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
 import net.solarnetwork.nim.domain.SolarNodeImageResource;
 import net.solarnetwork.nim.service.NodeImageRepository;
@@ -65,6 +71,10 @@ import net.solarnetwork.web.domain.Response;
 @CrossOrigin
 @RequestMapping(path = "/api/v1/images")
 public class NodeImageController {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+      .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private final NodeImageRepository nodeImageRepo;
   private final NodeImageService nodeImageService;
@@ -103,18 +113,27 @@ public class NodeImageController {
    *          a unique key that is required for future checks on the result
    * @param dataFiles
    *          a set of data file resources to customize the image with
+   * @param optionsFile
+   *          a JSON encoded {@link SolarNodeImageOptions} object to pass to the image customization
+   *          task
    * @return a receipt
    */
-  @PostMapping("/create/{imageId}/{key}")
+  @PostMapping(value = "/create/{imageId}/{key}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public Response<SolarNodeImageReceipt> customizeImage(@PathVariable("imageId") String imageId,
-      @PathVariable("key") String key, @RequestParam("dataFile") MultipartFile[] dataFiles) {
+      @PathVariable("key") String key, @RequestParam("dataFile") MultipartFile[] dataFiles,
+      @RequestParam(name = "options", required = false) MultipartFile optionsFile)
+      throws IOException {
     List<SolarNodeImageResource> resources = new ArrayList<>(dataFiles.length);
     for (MultipartFile dataFile : dataFiles) {
       resources.add(new MultipartFileSolarNodeImageResource(dataFile));
     }
+    SolarNodeImageOptions options = null;
+    if (optionsFile != null) {
+      options = OBJECT_MAPPER.readValue(optionsFile.getInputStream(), SolarNodeImageOptions.class);
+    }
     SolarNodeImage image = nodeImageRepo.findOne(imageId);
     try {
-      SolarNodeImageReceipt receipt = nodeImageService.createImage(key, image, resources, null);
+      SolarNodeImageReceipt receipt = nodeImageService.createImage(key, image, resources, options);
       return Response.response(receipt);
     } catch (IOException e) {
       throw new RuntimeException(e);

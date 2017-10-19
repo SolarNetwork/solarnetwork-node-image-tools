@@ -51,7 +51,7 @@ public class BasicSolarNodeImageInfoTests {
 
   @Test
   public void serializeAsJson() throws IOException {
-    BasicSolarNodeImageInfo info = new BasicSolarNodeImageInfo("foobar");
+    BasicSolarNodeImageInfo info = new BasicSolarNodeImageInfo("foobar", null, null);
     String json = OBJECT_MAPPER.writeValueAsString(info);
     assertThat(json, isJsonStringMatching(jsonObject().where("id", is(jsonText("foobar")))));
   }

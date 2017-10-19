@@ -24,17 +24,27 @@ package net.solarnetwork.nim.service.impl;
 
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
@@ -55,9 +65,11 @@ import net.solarnetwork.nim.util.DecompressingResource;
 public class FileSystemNodeImageRepository implements UpdatableNodeImageRepository {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-      .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
+      .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private final Path rootDirectory;
+  private String compressionType = "xz";
 
   public FileSystemNodeImageRepository(Path rootDirectory) {
     super();
@@ -142,27 +154,89 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
   @Override
   public SolarNodeImage save(SolarNodeImage image) {
     String id = image.getId();
-    String jsonFilename = id + ".json";
-    Path jsonFile = rootDirectory.resolve(jsonFilename);
-    SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id);
-    try {
-      OBJECT_MAPPER.writeValue(jsonFile.toFile(), info);
-    } catch (IOException e) {
-      throw new RuntimeException("Error writing image metadata to " + jsonFile, e);
-    }
     String filename = image.getFilename();
     if (filename == null) {
       filename = id;
     }
-    Path file = rootDirectory.resolve(filename);
-    try {
-      FileCopyUtils.copy(image.getInputStream(),
-          new BufferedOutputStream(new FileOutputStream(file.toFile())));
-    } catch (IOException e) {
+    Path file = rootDirectory.resolve(filename + "." + compressionType);
+
+    // compute the digests of both the input and output streams while copying...
+    MessageDigest inputDigest = DigestUtils.getSha256Digest();
+    MessageDigest outputDigest = DigestUtils.getSha256Digest();
+
+    try (InputStream in = image.getInputStream();
+        OutputStream out = new CompressorStreamFactory().createCompressorOutputStream(
+            compressionType, new BufferedOutputStream(new FileOutputStream(file.toFile())))) {
+      FileCopyUtils.copy(new FilterInputStream(in) {
+
+        @Override
+        public int read() throws IOException {
+          int b = in.read();
+          inputDigest.update((byte) b);
+          return b;
+        }
+
+        @Override
+        public int read(byte[] buf, int offset, int len) throws IOException {
+          int count = in.read(buf, offset, len);
+          inputDigest.update(buf, offset, count);
+          return count;
+        }
+
+        @Override
+        public int read(byte[] buf) throws IOException {
+          int count = in.read(buf);
+          inputDigest.update(buf, 0, count);
+          return count;
+        }
+
+      }, new FilterOutputStream(out) {
+
+        @Override
+        public void write(byte[] buf, int offset, int len) throws IOException {
+          outputDigest.update(buf, offset, len);
+          out.write(buf, offset, len);
+        }
+
+        @Override
+        public void write(byte[] buf) throws IOException {
+          outputDigest.update(buf);
+          out.write(buf);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+          outputDigest.update((byte) b);
+          out.write(b);
+        }
+
+      });
+
+      String jsonFilename = id + ".json";
+      Path jsonFile = rootDirectory.resolve(jsonFilename);
+      SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
+          new String(Hex.encodeHex(outputDigest.digest())),
+          new String(Hex.encodeHex(inputDigest.digest())));
+      try {
+        OBJECT_MAPPER.writeValue(jsonFile.toFile(), info);
+      } catch (IOException e) {
+        throw new RuntimeException("Error writing image metadata to " + jsonFile, e);
+      }
+      FileSystemResource rsrc = new FileSystemResource(file.toFile());
+      return new ResourceSolarNodeImage(info, rsrc);
+    } catch (CompressorException | IOException e) {
       throw new RuntimeException("Error writing image data to " + file, e);
     }
-    FileSystemResource rsrc = new FileSystemResource(file.toFile());
-    return new ResourceSolarNodeImage(info, rsrc);
+  }
+
+  /**
+   * Set the Apache Commons Compression library compression type compress images with.
+   * 
+   * @param compressionType
+   *          the compression type; defaults to {@literal xz}
+   */
+  public void setCompressionType(String compressionType) {
+    this.compressionType = compressionType;
   }
 
 }

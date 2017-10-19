@@ -27,12 +27,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.domain.SolarNodeImageOptions;
 import net.solarnetwork.nim.service.NodeImageService;
 
 /**
@@ -48,13 +47,18 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
    */
   public static final String SCRIPT_RESOURCE_NAME_EXTENSION = ".fish";
 
+  /**
+   * An options parameter key for the {@literal --format} value; defaults to {@literal raw}.
+   */
+  public static final String OPTIONS_PARAM_IMAGE_FORMAT = "format";
+
   private String guestfishBin = "guestfish";
 
   @Override
   protected ImageSetupResult createImageInternal(String key, SolarNodeImageInfo imageInfo,
-      Path imageFile, List<Path> resources, Map<String, ?> parameters) throws IOException {
+      Path imageFile, List<Path> resources, SolarNodeImageOptions options) throws IOException {
     Path workingDir = imageFile.getParent();
-    ProcessBuilder pb = setupProcess(workingDir, imageFile, resources, parameters);
+    ProcessBuilder pb = setupProcess(workingDir, imageFile, resources, options);
     Process proc = pb.start();
     StringBuilder output = new StringBuilder();
     try (BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
@@ -80,21 +84,33 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
   }
 
   private ProcessBuilder setupProcess(Path workingDir, Path imageFile, List<Path> resources,
-      Map<String, ?> parameters) {
+      SolarNodeImageOptions options) {
     List<String> cmd = new ArrayList<>(8);
     cmd.add(guestfishBin);
     cmd.add("--rw"); // mount image read+write
+
+    Object format = null;
+    if (options != null) {
+      format = options.getParameterValue("format");
+    }
+    if (format == null) {
+      format = "raw";
+    }
+    cmd.add("--format=" + format);
+
+    cmd.add("-a");
     cmd.add(imageFile.getFileName().toString()); // assumed to be in working dir
-    cmd.add("--inspector"); // auto-mount filesystems of image
+    cmd.add("-i"); // auto-mount filesystems of image
+    if (options != null && options.isVerbose()) {
+      cmd.add("-x");
+    }
 
     ProcessBuilder pb = new ProcessBuilder(cmd);
     pb.directory(workingDir.toFile());
 
-    Map<String, String> env = (parameters != null
-        ? parameters.entrySet().stream().filter(e -> e.getValue() != null)
-            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toString()))
-        : Collections.emptyMap());
-    pb.environment().putAll(env);
+    if (options != null && options.getEnvironment() != null) {
+      pb.environment().putAll(options.getEnvironment());
+    }
 
     Path scriptFile = resources.stream()
         .filter(p -> p.getFileName().toString().endsWith(SCRIPT_RESOURCE_NAME_EXTENSION))
@@ -103,8 +119,10 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
       throw new IllegalArgumentException(
           "No " + SCRIPT_RESOURCE_NAME_EXTENSION + " resource provided");
     }
-    log.info("Executing command {} <{}", cmd, scriptFile);
+    log.info("Executing command {} <{}", cmd.stream().collect(Collectors.joining(" ")), scriptFile);
     pb.redirectInput(scriptFile.toFile());
+
+    pb.redirectErrorStream(true);
 
     pb.command(cmd);
 
