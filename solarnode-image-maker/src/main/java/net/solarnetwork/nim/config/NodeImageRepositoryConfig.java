@@ -47,6 +47,11 @@ public class NodeImageRepositoryConfig {
   @Value("${repo.dest.fs.path:/var/tmp/node-image-repo}")
   private File fsDestRepoRootDirectory = new File("/var/tmp/node-image-repo");
 
+  /**
+   * The source repository to pull base images from.
+   * 
+   * @return the source image repo
+   */
   @Bean
   @Profile({ "default", "development" })
   @Qualifier("source")
@@ -60,7 +65,13 @@ public class NodeImageRepositoryConfig {
     return new FileSystemNodeImageRepository(fsSourceRepoRootDirectory.toPath());
   }
 
+  /**
+   * The repository to publish the customized images to for later download.
+   * 
+   * @return the destination image repo
+   */
   @Bean
+  @Profile({ "default", "development" })
   @Qualifier("dest")
   public FileSystemNodeImageRepository fsDestNodeImageRepository() {
     if (!fsDestRepoRootDirectory.isDirectory()) {
