@@ -13,8 +13,8 @@ through this application works like this:
 
 # Customization
 
-Customization works via the [libguestfs][libguestfs] library's [guestfish][guestfish]
-scripting language.
+Customization works via a restricted version of the [libguestfs][libguestfs]
+library's [guestfish][guestfish] scripting language.
 
 TODO
 
@@ -112,19 +112,23 @@ status information and a unique ID for your custom image:
 {
   "success": true,
   "data": {
-    "created": 1508450247355,
+    "createdDate": 1508450247355,
     "id": "1323214e-6abf-4e34-8487-b38f5302e3b2",
+    "baseImageId": "solarnode-deb8-ebox3300mx-1GB",
     "percentComplete": 0.0,
     "cancelled": false,
     "done": false,
     "started": true,
+    "startedDate": 1508450247376,
     "message": "Uncompressing source image"
   }
 }
 ```
 
-The application will have add the image customization task to a queue for
-asynchronous processing.
+The application will have added the image customization task to a queue for
+asynchronous processing. Once work begins on the task, the `started` property
+will change to `true` and the `percentComplete` will increase until the work is
+finished. Once finished the `done` property will change to `true`.
 
 ## Check status
 
@@ -138,12 +142,14 @@ the same value from that call. An example response looks like this:
 {
   "success": true,
   "data": {
-    "created": 1508454129211,
+    "createdDate": 1508454129211,
     "id": "03920daf-f0cc-4059-aa87-7192ddf82176",
+    "baseImageId": "solarnode-deb8-ebox3300mx-1GB",
     "percentComplete": 0.24285492007337528,
     "cancelled": false,
     "done": false,
     "started": true,
+    "startedDate": 1508454129238,
     "message": "Uncompressing source image"
   }
 }
@@ -161,19 +167,22 @@ image in an `imageInfo` property. For example:
 {
   "success": true,
   "data": {
-    "created": 1508455801860,
-    "id": "87fb8f6c-92dc-4304-8e3f-09817f345d21",
-    "percentComplete": 1.0,
+    "createdDate": 1508521059920,
+    "id": "337a4031-b600-4c1c-9181-fc46fa9da630",
+    "baseImageId": "solarnode-deb8-ebox3300mx-1GB",
+    "startedDate": 1508521059920,
+    "completedDate": 1508521532152,
     "imageInfo": {
-      "filename": "519d6bdfd194b6db6144fccca69bdf3749bf8e3f4e441eb4e1c45dc81c6dfdfc.img.xz",
+      "filename": "1cadc649-881b-45ee-85af-42a84b95993d.img.xz",
       "uncompressedContentLength": 1000341504,
-      "sha256": "2db6af2d9eff7c69919ce4966bad6cc009c5643dcedda4b7ee36105217fe329d",
-      "uncompressedSha256": "348618bd969627068d543287e3f8aa3dd9a286088d9d64fd8d1e790f6baef010",
-      "contentLength": 260473232,
-      "id": "519d6bdfd194b6db6144fccca69bdf3749bf8e3f4e441eb4e1c45dc81c6dfdfc"
+      "uncompressedSha256": "b38ecb3c2d67c7c65196346f7190e74c424c40ffcda9443d86cedea2f3a1fddb",
+      "sha256": "9545a2ffef191432d877977c3cacd143ead88b1b719cb0fd7a76dcac714f76b4",
+      "contentLength": 290128104,
+      "id": "1cadc649-881b-45ee-85af-42a84b95993d"
     },
-    "cancelled": false,
+    "percentComplete": 1.0,
     "done": true,
+    "cancelled": false,
     "started": true,
     "message": "Done"
   }

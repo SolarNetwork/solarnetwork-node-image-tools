@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImageOptions;
+import net.solarnetwork.nim.service.NodeImageScriptValidator;
 import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.nim.util.TaskStepTracker;
 
@@ -54,6 +55,7 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
   public static final String OPTIONS_PARAM_IMAGE_FORMAT = "format";
 
   private String guestfishBin = "guestfish";
+  private NodeImageScriptValidator scriptValidator = new GuestfishScriptSanitizer();
 
   @Override
   protected ImageSetupResult createImageInternal(String key, SolarNodeImageInfo imageInfo,
@@ -121,6 +123,7 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
       throw new IllegalArgumentException(
           "No " + SCRIPT_RESOURCE_NAME_EXTENSION + " resource provided");
     }
+    scriptValidator.validate(scriptFile);
     log.info("Executing command {} <{}", cmd.stream().collect(Collectors.joining(" ")), scriptFile);
     pb.redirectInput(scriptFile.toFile());
 
@@ -144,6 +147,16 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
    */
   public void setGuestfishBin(String guestfishBin) {
     this.guestfishBin = guestfishBin;
+  }
+
+  /**
+   * Set a validator to use on {@literal guestfish} scripts.
+   * 
+   * @param scriptValidator
+   *          the validate to use; defaults to a {@link GuestfishScriptSanitizer} instance
+   */
+  public void setScriptValidator(NodeImageScriptValidator scriptValidator) {
+    this.scriptValidator = scriptValidator;
   }
 
 }
