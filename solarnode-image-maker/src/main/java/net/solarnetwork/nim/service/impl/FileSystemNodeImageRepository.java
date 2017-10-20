@@ -137,14 +137,37 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     }
   }
 
-  private ResourceSolarNodeImage findOneInternal(String id) throws IOException {
+  @Override
+  public void delete(String id) {
+    List<Path> files;
+    try {
+      files = imageFiles(id);
+    } catch (IOException e) {
+      throw new RuntimeException("Error finding image files for ID " + id, e);
+
+    }
+    for (Path path : files) {
+      try {
+        Files.deleteIfExists(path);
+      } catch (IOException e) {
+        throw new RuntimeException("Error deleting image file " + path, e);
+      }
+    }
+  }
+
+  private List<Path> imageFiles(String id) throws IOException {
+    // get paths to the metadata AND any associated image (for which we don't know the extension)
     final String imagePathsPrefix = id + ".";
+    return Files.walk(rootDirectory)
+        .filter(p -> p.getFileName().toString().startsWith(imagePathsPrefix))
+        .collect(Collectors.toList());
+  }
+
+  private ResourceSolarNodeImage findOneInternal(String id) throws IOException {
     final String imageInfoPath = id + ".json";
 
     // get paths to the metadata AND any associated image (for which we don't know the extension)
-    List<Path> imagePaths = Files.walk(rootDirectory)
-        .filter(p -> p.getFileName().toString().startsWith(imagePathsPrefix))
-        .collect(Collectors.toList());
+    List<Path> imagePaths = imageFiles(id);
     Path infoPath = imagePaths.stream()
         .filter(p -> p.getFileName().toString().equals(imageInfoPath)).findFirst().orElse(null);
     if (infoPath == null) {

@@ -43,9 +43,17 @@ public interface UpdatableNodeImageRepository extends NodeImageRepository {
    * @param image
    *          the image to save
    * @param tracker
-   *          an optional tracker to update progress on
+   *          a tracker to update progress on, or {@literal null} if progress tracking not needed
    * @return the saved image
    */
   SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker);
+
+  /**
+   * Deletes a given node image.
+   * 
+   * @param id
+   *          the ID of the image to delete
+   */
+  void delete(String id);
 
 }

@@ -40,7 +40,8 @@ public class TaskStepTracker {
   private int currentStep = 0;
   private double stepPercentComplete = 0f;
   private String message = null;
-  private boolean started = false;
+  private Long startedDate = null;
+  private Long completedDate = null;
 
   /**
    * Constructor.
@@ -154,14 +155,48 @@ public class TaskStepTracker {
    * @return the started flag
    */
   public boolean isStarted() {
-    return started;
+    return startedDate != null;
+  }
+
+  /**
+   * Get the date {@link #start()} was called.
+   * 
+   * @return the start date
+   */
+  public Long getStartedDate() {
+    return startedDate;
   }
 
   /**
    * Set the started flag to {@literal true}.
    */
   public void start() {
-    this.started = true;
+    this.startedDate = System.currentTimeMillis();
+  }
+
+  /**
+   * Get the completed flag.
+   * 
+   * @return the completed flag
+   */
+  public boolean isCompleted() {
+    return completedDate != null;
+  }
+
+  /**
+   * Get the date {@link #complete()} was called.
+   * 
+   * @return the completed date
+   */
+  public Long getCompletedDate() {
+    return completedDate;
+  }
+
+  /**
+   * Set the complete flag to {@literal true}.
+   */
+  public void complete() {
+    this.completedDate = System.currentTimeMillis();
   }
 
 }

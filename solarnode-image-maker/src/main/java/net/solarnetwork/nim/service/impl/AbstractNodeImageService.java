@@ -42,6 +42,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.joda.time.Duration;
+import org.joda.time.ReadableDuration;
+import org.joda.time.format.PeriodFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -131,6 +134,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     final String taskId = taskId(receiptId, key);
     final Path root = Files.createTempDirectory(stagingDir, "node-image-");
     final Path imageDest = root.resolve(sourceImage.getId() + ".img");
+    final String outputId = UUID.randomUUID().toString();
 
     // copy input data on calling thread, so things like multipart temp files aren't deleted
     final List<Path> resourceFiles = new ArrayList<>(8);
@@ -166,29 +170,43 @@ public abstract class AbstractNodeImageService implements NodeImageService {
           if (result.isSuccess() && result.getImageFile() != null) {
             // compress the image while copying into repo
             tracker.setMessage("Compressing image");
-            Resource imageFileResource = new FileSystemResource(result.getImageFile().toFile());
-            ResourceSolarNodeImage image = new ResourceSolarNodeImage(new BasicSolarNodeImageInfo(
-                taskId, null, 0, null, imageFileResource.contentLength()), imageFileResource);
+            Resource imageResource = new FileSystemResource(result.getImageFile().toFile());
+            ResourceSolarNodeImage image = new ResourceSolarNodeImage(
+                new BasicSolarNodeImageInfo(outputId, null, 0, null, imageResource.contentLength()),
+                imageResource);
             SolarNodeImage output = nodeImageRepository.save(image, tracker);
             tracker.completeStep(); // 3
             tracker.setMessage("Done");
             return output;
           }
           throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
-        } catch (Exception e) {
-          tracker.setMessage(e.getMessage());
+        } catch (Exception | Error e) {
+          tracker.setMessage(e.getClass().getSimpleName() + ": " + e.getMessage());
+          try {
+            nodeImageRepository.delete(outputId);
+          } catch (Throwable t) {
+            // ignore
+            log.warn("Error cleaning up image {} after {}", outputId, e.getClass().getSimpleName());
+          }
           throw e;
         } finally {
           // clean up
           log.info("Deleting staging dir {}", root);
           FileSystemUtils.deleteRecursively(root.toFile());
+          tracker.complete();
+          ReadableDuration dur = new Duration(
+              TimeUnit.MILLISECONDS.toSeconds(tracker.getStartedDate()) * 1000,
+              TimeUnit.MILLISECONDS.toSeconds(tracker.getCompletedDate()) * 1000);
+          log.info("Task {} completed {} in {}", taskId,
+              ("Done".equals(tracker.getMessage()) ? "successfully" : "with error"),
+              PeriodFormat.wordBased().print(dur.toPeriod()));
         }
       }
     };
 
     Future<SolarNodeImage> result = executorService.submit(task);
-    SolarNodeImageReceiptFuture receipt = new SolarNodeImageReceiptFuture(receiptId, result,
-        tracker);
+    SolarNodeImageReceiptFuture receipt = new SolarNodeImageReceiptFuture(receiptId,
+        sourceImage.getId(), result, tracker);
     receipts.put(taskId, receipt);
     return receipt;
   }
@@ -213,9 +231,13 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     for (Iterator<SolarNodeImageReceiptFuture> itr = receipts.values().iterator(); itr.hasNext();) {
       SolarNodeImageReceiptFuture task = itr.next();
       // TODO: maybe only remove done tasks, in case there is a backlog?
-      if ((task.getCreated() + (receiptMaxAgeSeconds * 1000)) < System.currentTimeMillis()) {
+      if ((task.getCreatedDate() + (receiptMaxAgeSeconds * 1000)) < System.currentTimeMillis()) {
         if (!task.isDone()) {
           task.cancel(true);
+        }
+        SolarNodeImageInfo info = task.getImageInfo();
+        if (info != null) {
+          nodeImageRepository.delete(info.getId());
         }
         itr.remove();
         removed++;

@@ -40,6 +40,16 @@ public class BasicSolarNodeImageInfo implements SolarNodeImageInfo {
   private final long uncompressedContentLength;
 
   /**
+   * Construct with just an ID.
+   * 
+   * @param id
+   *          the ID value
+   */
+  public BasicSolarNodeImageInfo(String id) {
+    this(id, null, 0, null, 0);
+  }
+
+  /**
    * Constructor.
    * 
    * @param id

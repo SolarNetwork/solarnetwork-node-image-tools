@@ -39,8 +39,9 @@ import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
  */
 public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
 
-  private final long created;
+  private final long createdDate;
   private final String id;
+  private final String baseImageId;
   private final Future<SolarNodeImage> future;
   private final TaskStepTracker tracker;
 
@@ -49,32 +50,36 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
    * 
    * @param id
    *          the receipt ID
+   * @param baseImageId
+   *          the base image ID
    * @param future
    *          the task
    * @param tracker
    *          a step tracker
    */
-  public SolarNodeImageReceiptFuture(String id, Future<SolarNodeImage> future,
+  public SolarNodeImageReceiptFuture(String id, String baseImageId, Future<SolarNodeImage> future,
       TaskStepTracker tracker) {
     super();
-    this.created = System.currentTimeMillis();
+    this.createdDate = System.currentTimeMillis();
     this.id = id;
+    this.baseImageId = baseImageId;
     this.future = future;
     this.tracker = tracker;
   }
 
-  /**
-   * Get the creation date.
-   * 
-   * @return the creation date
-   */
-  public long getCreated() {
-    return created;
+  @Override
+  public long getCreatedDate() {
+    return createdDate;
   }
 
   @Override
   public String getId() {
     return id;
+  }
+
+  @Override
+  public String getBaseImageId() {
+    return baseImageId;
   }
 
   @Override
@@ -95,6 +100,11 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
   @Override
   public boolean isStarted() {
     return tracker.isStarted();
+  }
+
+  @Override
+  public Long getStartedDate() {
+    return tracker.getStartedDate();
   }
 
   @Override
@@ -128,6 +138,11 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
       }
     }
     return null;
+  }
+
+  @Override
+  public Long getCompletedDate() {
+    return tracker.getCompletedDate();
   }
 
 }

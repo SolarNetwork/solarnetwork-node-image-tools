@@ -44,12 +44,50 @@ public interface SolarNodeImageReceipt extends Future<SolarNodeImage> {
   String getId();
 
   /**
+   * Get the ID of the image that served as the starting point for this customized image.
+   * 
+   * @return the base image ID
+   */
+  String getBaseImageId();
+
+  /**
+   * Get the date the task was created.
+   * 
+   * <p>
+   * Note that when tasks are created they may be added to a queue and not immediately executed. The
+   * {@link #getStartedDate()} represents the date the task started executing.
+   * </p>
+   * 
+   * @return the task creation date
+   */
+  long getCreatedDate();
+
+  /**
    * Flag indicating if the task has started.
    * 
    * @return {@literal true} if the task has started, or {@literal false} if it is still queued to
    *         start later
    */
   boolean isStarted();
+
+  /**
+   * Get the date the customization task started executing.
+   * 
+   * <p>
+   * This represents the date when work on the task started, which will be some point after
+   * {@link #getCreatedDate()}.
+   * </p>
+   * 
+   * @return the task start date
+   */
+  Long getStartedDate();
+
+  /**
+   * Get the date the customization task completed executing.
+   * 
+   * @return the completion date, or {@literal null} if not completed
+   */
+  Long getCompletedDate();
 
   /**
    * Get a status message.
