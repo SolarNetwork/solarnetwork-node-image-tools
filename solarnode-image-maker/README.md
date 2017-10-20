@@ -11,6 +11,13 @@ through this application works like this:
  * compresses the customized image
  * allows you to download the compressed customized image
 
+# Customization
+
+Customization works via the [libguestfs][libgestfs] library's [guestfish][guestfish]
+scripting language.
+
+TODO
+
 # Example
 
 Here's an example of the REST interactions that make up the typical image
@@ -49,7 +56,7 @@ anything; a good choice would be a random UUID. In this example we'll just use
 
 This endpoint accepts `multipart/form-data` content of multiple file attachments.
 You can include any number of `dataFile` parts for the custom data you will
-be customizing the base image with. At least one `dtaFile` part for a `*.fish`
+be customizing the base image with. At least one `dataFile` part for a `*.fish`
 file is required: this is the `guestfish` script that will be Customizing
 the image for you.
 
@@ -172,3 +179,6 @@ image in an `imageInfo` property. For example:
   }
 }
 ```
+
+ [libguestfs]: http://libguestfs.org/
+ [guestfish]: http://libguestfs.org/guestfish.1.html
