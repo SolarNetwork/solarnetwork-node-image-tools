@@ -39,7 +39,15 @@ import net.solarnetwork.nim.service.NodeImageScriptValidator;
  */
 public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
 
-  public static final Pattern EXTERNAL_SHELL_PAT = Pattern.compile("^\\s*<?!");
+  /**
+   * The pattern for a {@literal guestfish} local command.
+   */
+  public static final Pattern LOCAL_CMD_PAT = Pattern.compile("^\\s*<?!");
+
+  /**
+   * The pattern for a {@literal guestfish} local change directory command.
+   */
+  public static final Pattern LCD_CMD_PAT = Pattern.compile("^\\s*lcd");
 
   /**
    * Validate the contents of the script file.
@@ -56,9 +64,13 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
       String line = null;
       while ((line = in.readLine()) != null) {
         lineno++;
-        if (EXTERNAL_SHELL_PAT.matcher(line).find()) {
+        if (LOCAL_CMD_PAT.matcher(line).find()) {
           throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
               "Local commands are not supported: " + line);
+        }
+        if (LCD_CMD_PAT.matcher(line).find()) {
+          throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
+              "The lcd command is not supported: " + line);
         }
       }
     } catch (IOException e) {

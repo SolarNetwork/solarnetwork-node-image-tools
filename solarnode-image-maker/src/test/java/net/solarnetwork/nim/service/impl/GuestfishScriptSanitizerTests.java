@@ -106,4 +106,32 @@ public class GuestfishScriptSanitizerTests {
     }
   }
 
+  @Test
+  public void lcdCommandRestricted() throws Exception {
+    URL scriptUrl = getClass().getResource("sanitizer-test-06.fish");
+    Path scriptFile = Paths.get(scriptUrl.toURI());
+    GuestfishScriptSanitizer sanitizer = new GuestfishScriptSanitizer();
+    try {
+      sanitizer.validate(scriptFile);
+      Assert.fail("Expected NodeImageScriptException exception");
+    } catch (NodeImageScriptException e) {
+      assertThat(e.getScriptName(), equalTo("sanitizer-test-06.fish"));
+      assertThat(e.getLineNumber(), equalTo(2));
+    }
+  }
+
+  @Test
+  public void lcdWithWhitespaceRestricted() throws Exception {
+    URL scriptUrl = getClass().getResource("sanitizer-test-07.fish");
+    Path scriptFile = Paths.get(scriptUrl.toURI());
+    GuestfishScriptSanitizer sanitizer = new GuestfishScriptSanitizer();
+    try {
+      sanitizer.validate(scriptFile);
+      Assert.fail("Expected NodeImageScriptException exception");
+    } catch (NodeImageScriptException e) {
+      assertThat(e.getScriptName(), equalTo("sanitizer-test-07.fish"));
+      assertThat(e.getLineNumber(), equalTo(2));
+    }
+  }
+
 }
