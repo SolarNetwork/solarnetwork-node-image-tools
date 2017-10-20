@@ -1,7 +1,7 @@
 # SolarNode Image Maker
 
 This project provides a RESTful webapp that helps creating customized SolarNode
-operating system image files. At a high level, the creating a customized image
+operating system image files. At a high level, creating a customized image
 through this application works like this:
 
  * the application provides access to a library of _base images_ that serve
