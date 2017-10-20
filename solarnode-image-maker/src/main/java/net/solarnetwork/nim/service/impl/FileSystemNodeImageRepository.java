@@ -37,17 +37,10 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.lang3.mutable.MutableLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.ResourceSolarNodeImage;
@@ -68,17 +61,10 @@ import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
  * @author matt
  * @version 1.0
  */
-public class FileSystemNodeImageRepository implements UpdatableNodeImageRepository {
-
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-      .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
+    implements UpdatableNodeImageRepository {
 
   private final Path rootDirectory;
-  private String compressionType = "xz";
-  private float compressionRatio = 1f;
-
-  private final Logger log = LoggerFactory.getLogger(getClass());
 
   public FileSystemNodeImageRepository(Path rootDirectory) {
     super();
@@ -183,12 +169,6 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     return new ResourceSolarNodeImage(info, rsrc);
   }
 
-  private OutputStream createCompressorOutputStream(OutputStream out)
-      throws CompressorException, IOException {
-    CompressorStreamFactory compressorFactory = new MaxCompressorStreamFactory(compressionRatio);
-    return compressorFactory.createCompressorOutputStream(compressionType, out);
-  }
-
   @Override
   public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
     String id = image.getId();
@@ -207,7 +187,7 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     try (InputStream in = image.getInputStream();
         OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
       log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), file,
-          compressionType, (int) (compressionRatio * 100));
+          getCompressionType(), (int) (getCompressionRatio() * 100));
       FileCopyUtils.copy(in,
           new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
               new MessageDigestOutputStream(inputDigest, inputContentLength,
@@ -229,27 +209,6 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     } catch (CompressorException | IOException e) {
       throw new RuntimeException("Error writing image data to " + file, e);
     }
-  }
-
-  /**
-   * Set the Apache Commons Compression library compression type compress images with.
-   * 
-   * @param compressionType
-   *          the compression type; defaults to {@literal xz}
-   */
-  public void setCompressionType(String compressionType) {
-    this.compressionType = compressionType;
-  }
-
-  /**
-   * Set the desired compression ratio to use when compressing images.
-   * 
-   * @param compressionRatio
-   *          a ratio between {@literal 0} (least compression) and {@literal 1} (higest compression)
-   * @see net.solarnetwork.nim.util.MaxCompressorStreamFactory#MaxCompressorStreamFactory(float)
-   */
-  public void setCompressionRatio(float compressionRatio) {
-    this.compressionRatio = compressionRatio;
   }
 
 }
