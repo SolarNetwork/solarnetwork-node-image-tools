@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,7 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
 
   private final Path rootDirectory;
   private String compressionType = "xz";
+  private float compressionRatio = 1f;
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -158,6 +160,12 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
     return new ResourceSolarNodeImage(info, rsrc);
   }
 
+  private OutputStream createCompressorOutputStream(OutputStream out)
+      throws CompressorException, IOException {
+    CompressorStreamFactory compressorFactory = new MaxCompressorStreamFactory(compressionRatio);
+    return compressorFactory.createCompressorOutputStream(compressionType, out);
+  }
+
   @Override
   public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
     String id = image.getId();
@@ -175,11 +183,12 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
 
     try (InputStream in = image.getInputStream();
         OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
-      log.info("Compressing image {} to {}", image.getFilename(), file);
+      log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), file,
+          compressionType, (int) (compressionRatio * 100));
       FileCopyUtils.copy(in,
           new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
               new MessageDigestOutputStream(inputDigest, inputContentLength,
-                  new MaxCompressorStreamFactory().createCompressorOutputStream(compressionType,
+                  createCompressorOutputStream(
                       new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
 
       String jsonFilename = id + ".json";
@@ -207,6 +216,17 @@ public class FileSystemNodeImageRepository implements UpdatableNodeImageReposito
    */
   public void setCompressionType(String compressionType) {
     this.compressionType = compressionType;
+  }
+
+  /**
+   * Set the desired compression ratio to use when compressing images.
+   * 
+   * @param compressionRatio
+   *          a ratio between {@literal 0} (least compression) and {@literal 1} (higest compression)
+   * @see net.solarnetwork.nim.util.MaxCompressorStreamFactory#MaxCompressorStreamFactory(float)
+   */
+  public void setCompressionRatio(float compressionRatio) {
+    this.compressionRatio = compressionRatio;
   }
 
 }

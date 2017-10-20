@@ -37,17 +37,59 @@ import org.apache.commons.compress.compressors.xz.XZUtils;
 /**
  * Extension of {@link CompressorStreamFactory} to use maximum compression.
  * 
+ * <p>
+ * By default maximum compression is requested, however the actual amount can be changed by passing
+ * a {@code compressionRatio} value < {@literal 1} to an appropriate constructor.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
 public class MaxCompressorStreamFactory extends CompressorStreamFactory {
+
+  private final float compressionRatio;
+
+  /**
+   * Default constructor.
+   * 
+   * <p>
+   * Constructs with a ratio of 1.
+   * </p>
+   */
+  public MaxCompressorStreamFactory() {
+    this(1.0f);
+  }
+
+  /**
+   * Construct with a desired compression ratio.
+   * 
+   * @param compressionRatio
+   *          a value between {@literal 0} (least compression, fastest operation) and {@literal 1}
+   *          (most compression, slowest operation)
+   */
+  public MaxCompressorStreamFactory(float compressionRatio) {
+    super();
+    this.compressionRatio = compressionRatio;
+  }
+
+  public MaxCompressorStreamFactory(boolean decompressUntilEof) {
+    super(decompressUntilEof);
+    this.compressionRatio = 1f;
+  }
+
+  public MaxCompressorStreamFactory(boolean decompressUntilEof, int memoryLimitInKb,
+      float compressionRatio) {
+    super(decompressUntilEof, memoryLimitInKb);
+    this.compressionRatio = compressionRatio;
+  }
 
   @Override
   public CompressorOutputStream createCompressorOutputStream(String name, OutputStream out)
       throws CompressorException {
     try {
       if (XZ.equals(name)) {
-        return new XZCompressorOutputStream(out, 9);
+        int rate = Math.max(1, Math.round(compressionRatio * 9f));
+        return new XZCompressorOutputStream(out, rate);
       }
     } catch (final IOException e) {
       throw new CompressorException("Could not create CompressorOutputStream", e);

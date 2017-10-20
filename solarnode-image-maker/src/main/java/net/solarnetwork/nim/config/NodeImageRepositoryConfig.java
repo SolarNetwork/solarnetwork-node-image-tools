@@ -47,6 +47,12 @@ public class NodeImageRepositoryConfig {
   @Value("${repo.dest.fs.path:/var/tmp/node-image-repo}")
   private File fsDestRepoRootDirectory = new File("/var/tmp/node-image-repo");
 
+  @Value("${repo.dest.compression.type:xz}")
+  private String fsDestRepoCompressionType = "xz";
+
+  @Value("${repo.dest.compression.ratio:1}")
+  private float fsDestRepoCompressionRatio = 1f;
+
   /**
    * The source repository to pull base images from.
    * 
@@ -80,7 +86,11 @@ public class NodeImageRepositoryConfig {
             + " does not exist and unable to create");
       }
     }
-    return new FileSystemNodeImageRepository(fsDestRepoRootDirectory.toPath());
+    FileSystemNodeImageRepository repo = new FileSystemNodeImageRepository(
+        fsDestRepoRootDirectory.toPath());
+    repo.setCompressionRatio(fsDestRepoCompressionRatio);
+    repo.setCompressionType(fsDestRepoCompressionType);
+    return repo;
   }
 
 }
