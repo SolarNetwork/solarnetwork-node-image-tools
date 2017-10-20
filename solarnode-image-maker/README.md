@@ -13,7 +13,7 @@ through this application works like this:
 
 # Customization
 
-Customization works via the [libguestfs][libgestfs] library's [guestfish][guestfish]
+Customization works via the [libguestfs][libguestfs] library's [guestfish][guestfish]
 scripting language.
 
 TODO
