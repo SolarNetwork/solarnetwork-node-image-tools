@@ -78,6 +78,9 @@ public class NodeImageRepositoryConfig {
   @Value("${repo.source.s3.cache.path:/var/tmp/node-image-cache}")
   private File s3SourceRepoCacheDirectory = new File("/var/tmp/node-image-cache");
 
+  @Value("${repo.dest.s3.objectKeyPrefix:solarnode-custom-images/}")
+  private String s3DestObjectKeyPrefix = "solarnode-custom-images/";
+
   /**
    * The source repository to pull base images from.
    * 
@@ -102,7 +105,7 @@ public class NodeImageRepositoryConfig {
    * @return the destination image repo
    */
   @Bean
-  @Profile({ "default", "development", "staging" })
+  @Profile({ "default", "development" })
   @Qualifier("dest")
   public FileSystemNodeImageRepository fsDestNodeImageRepository() {
     if (!fsDestRepoRootDirectory.isDirectory()) {
@@ -145,6 +148,26 @@ public class NodeImageRepositoryConfig {
         s3SourceRepoCacheDirectory.toPath());
     repo.setImageCache(imageCache);
 
+    return repo;
+  }
+
+  /**
+   * The S3 repository to publish the customized images to for later download.
+   * 
+   * @return the destination image repo
+   */
+  @Bean
+  @Profile({ "staging", "production" })
+  @Qualifier("dest")
+  public S3NodeImageRepository s3DestNodeImageRepository() {
+    AmazonS3 client = AmazonS3ClientBuilder.standard().withRegion(s3Region)
+        .withCredentials(
+            new AWSStaticCredentialsProvider(new BasicAWSCredentials(s3AccessKey, s3SecretKey)))
+        .build();
+    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3BucketName,
+        s3DestObjectKeyPrefix);
+    repo.setCompressionRatio(fsDestRepoCompressionRatio);
+    repo.setCompressionType(fsDestRepoCompressionType);
     return repo;
   }
 
