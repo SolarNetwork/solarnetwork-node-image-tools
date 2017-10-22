@@ -23,17 +23,29 @@
 package net.solarnetwork.nim.service.impl;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.lang3.mutable.MutableLong;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.service.DataStreamCache;
@@ -41,7 +53,9 @@ import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
+import net.solarnetwork.nim.util.MessageDigestOutputStream;
 import net.solarnetwork.nim.util.TaskStepTracker;
+import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
 
 /**
  * {@link NodeImageRepository} backed by Amazon S3 storage.
@@ -159,14 +173,72 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
 
   @Override
   public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
-    // TODO Auto-generated method stub
-    return null;
+    final String id = image.getId();
+    final String metaObjectKey = absoluteObjectKey(
+        META_OBJECT_KEY_PREFIX + id + METADATA_OBJECT_KEY_SUFFIX);
+    final String imageObjectKey = MaxCompressorStreamFactory.getCompressedFilename(
+        getCompressionType(),
+        absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id + IMAGE_OBJECT_KEY_SUFFIX));
+
+    // compute the digests of both the input and output streams while copying...
+    final long expectedInputContentLength = image.getUncompressedContentLength();
+    MessageDigest inputDigest = DigestUtils.getSha256Digest();
+    MessageDigest outputDigest = DigestUtils.getSha256Digest();
+
+    MutableLong inputContentLength = new MutableLong(0);
+    MutableLong outputContentLength = new MutableLong(0);
+
+    // no compressor input stream that compresses, so have to pipe via compressing output stream
+
+    try (PipedInputStream pin = new PipedInputStream();
+        InputStream in = image.getInputStream();
+        PipedOutputStream out = new PipedOutputStream(pin)) {
+      log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), imageObjectKey,
+          getCompressionType(), (int) (getCompressionRatio() * 100));
+      new Thread(new Runnable() {
+
+        @Override
+        public void run() {
+          try {
+            FileCopyUtils.copy(in, new TaskStepTrackerOutputStream(expectedInputContentLength,
+                tracker,
+                new MessageDigestOutputStream(inputDigest, inputContentLength,
+                    createCompressorOutputStream(
+                        new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
+          } catch (CompressorException | IOException e) {
+            log.warn("Error compressing image {} to {}", image.getFilename(), imageObjectKey, e);
+          }
+        }
+
+      }).start();
+      PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, pin, null);
+      client.putObject(req);
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing image data to " + imageObjectKey, e);
+    }
+
+    try {
+      SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
+          new String(Hex.encodeHex(outputDigest.digest())), outputContentLength.longValue(),
+          new String(Hex.encodeHex(inputDigest.digest())), inputContentLength.longValue());
+      String infoJson = OBJECT_MAPPER.writeValueAsString(info);
+      client.putObject(bucketName, metaObjectKey, infoJson);
+      return findOne(id);
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing image metadata to " + metaObjectKey, e);
+    }
   }
 
   @Override
   public void delete(String id) {
-    // TODO Auto-generated method stub
-
+    final String metaObjectKey = absoluteObjectKey(
+        META_OBJECT_KEY_PREFIX + id + METADATA_OBJECT_KEY_SUFFIX);
+    final String imageObjectKey = MaxCompressorStreamFactory.getCompressedFilename(
+        getCompressionType(),
+        absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id + IMAGE_OBJECT_KEY_SUFFIX));
+    DeleteObjectsRequest req = new DeleteObjectsRequest(bucketName).withKeys(metaObjectKey,
+        imageObjectKey);
+    client.deleteObjects(req);
   }
 
   /**
