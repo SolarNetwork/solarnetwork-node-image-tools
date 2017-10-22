@@ -34,6 +34,14 @@ import net.solarnetwork.nim.util.TaskStepTracker;
 public interface UpdatableNodeImageRepository extends NodeImageRepository {
 
   /**
+   * Get the number of task steps required by the {@link #save(SolarNodeImage, TaskStepTracker)}
+   * method.
+   * 
+   * @return the number of task steps required
+   */
+  int getSaveTaskStepCount();
+
+  /**
    * Saves a given node image.
    * 
    * <p>

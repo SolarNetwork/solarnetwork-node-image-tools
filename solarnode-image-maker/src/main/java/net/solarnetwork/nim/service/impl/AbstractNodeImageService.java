@@ -146,7 +146,8 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     }
 
     // steps are: 1) uncompress image 2) customize image 3) compress image
-    final TaskStepTracker tracker = new TaskStepTracker(3);
+    final TaskStepTracker tracker = new TaskStepTracker(
+        2 + nodeImageRepository.getSaveTaskStepCount());
 
     Callable<SolarNodeImage> task = new Callable<SolarNodeImage>() {
 
@@ -160,12 +161,11 @@ public abstract class AbstractNodeImageService implements NodeImageService {
           FileCopyUtils.copy(sourceImage.getInputStream(),
               new TaskStepTrackerOutputStream(sourceImage.getUncompressedContentLength(), tracker,
                   new BufferedOutputStream(new FileOutputStream(imageDest.toFile()))));
-          tracker.completeStep(); // 1
+          tracker.completeStep(); // step 1
 
           tracker.setMessage("Customizing image");
           ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
-              options, tracker);
-          tracker.completeStep(); // 2
+              options, tracker); // steps 2-N
 
           if (result.isSuccess() && result.getImageFile() != null) {
             // compress the image while copying into repo
@@ -175,7 +175,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
                 new BasicSolarNodeImageInfo(outputId, null, 0, null, imageResource.contentLength()),
                 imageResource);
             SolarNodeImage output = nodeImageRepository.save(image, tracker);
-            tracker.completeStep(); // 3
+            tracker.completeStep(); // step N+2
             tracker.setMessage("Done");
             return output;
           }
@@ -270,7 +270,9 @@ public abstract class AbstractNodeImageService implements NodeImageService {
    * @param options
    *          options to use when customizing the image
    * @param tracker
-   *          a step tracker
+   *          a step tracker; the implementing method must call
+   *          {@link TaskStepTracker#completeStep()} at many times as
+   *          {@link UpdatableNodeImageRepository#getSaveTaskStepCount()} returns
    * @return the result object
    */
   protected abstract ImageSetupResult createImageInternal(String key, SolarNodeImageInfo imageInfo,

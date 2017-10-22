@@ -22,10 +22,16 @@
 
 package net.solarnetwork.nim.service.impl;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +40,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.lang3.mutable.MutableLong;
+import org.springframework.http.MediaType;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
@@ -41,6 +48,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -55,6 +63,7 @@ import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
 import net.solarnetwork.nim.util.MessageDigestOutputStream;
 import net.solarnetwork.nim.util.TaskStepTracker;
+import net.solarnetwork.nim.util.TaskStepTrackerInputStream;
 import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
 
 /**
@@ -83,6 +92,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
   private final String bucketName;
   private final String objectKeyPrefix;
 
+  private Path workDir = Paths.get(System.getProperty("java.io.tmpdir"));
   private DataStreamCache imageCache;
   private int maximumKeysPerRequest = 500;
 
@@ -172,6 +182,11 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
   }
 
   @Override
+  public int getSaveTaskStepCount() {
+    return 3; // compress, upload data, upload meta
+  }
+
+  @Override
   public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
     final String id = image.getId();
     final String metaObjectKey = absoluteObjectKey(
@@ -179,6 +194,13 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
     final String imageObjectKey = MaxCompressorStreamFactory.getCompressedFilename(
         getCompressionType(),
         absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id + IMAGE_OBJECT_KEY_SUFFIX));
+
+    final Path file;
+    try {
+      file = Files.createTempFile(workDir, "node-image-", "");
+    } catch (IOException e) {
+      throw new RuntimeException("Error creating temporary image data file", e);
+    }
 
     // compute the digests of both the input and output streams while copying...
     final long expectedInputContentLength = image.getUncompressedContentLength();
@@ -188,41 +210,45 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
     MutableLong inputContentLength = new MutableLong(0);
     MutableLong outputContentLength = new MutableLong(0);
 
-    // no compressor input stream that compresses, so have to pipe via compressing output stream
-
-    try (PipedInputStream pin = new PipedInputStream();
-        InputStream in = image.getInputStream();
-        PipedOutputStream out = new PipedOutputStream(pin)) {
-      log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), imageObjectKey,
+    try (InputStream in = image.getInputStream();
+        OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
+      log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), file,
           getCompressionType(), (int) (getCompressionRatio() * 100));
-      new Thread(new Runnable() {
+      FileCopyUtils.copy(in,
+          new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
+              new MessageDigestOutputStream(inputDigest, inputContentLength,
+                  createCompressorOutputStream(
+                      new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
+      tracker.completeStep(); // step 1
+    } catch (CompressorException | IOException e) {
+      throw new RuntimeException("Error compressing image data to " + file, e);
+    }
 
-        @Override
-        public void run() {
-          try {
-            FileCopyUtils.copy(in, new TaskStepTrackerOutputStream(expectedInputContentLength,
-                tracker,
-                new MessageDigestOutputStream(inputDigest, inputContentLength,
-                    createCompressorOutputStream(
-                        new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
-          } catch (CompressorException | IOException e) {
-            log.warn("Error compressing image {} to {}", image.getFilename(), imageObjectKey, e);
-          }
-        }
-
-      }).start();
-      PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, pin, null);
+    try (InputStream in = new TaskStepTrackerInputStream(outputContentLength.longValue(), tracker,
+        new BufferedInputStream(Files.newInputStream(file)))) {
+      log.info("Uploading image {} to {}", file, imageObjectKey);
+      ObjectMetadata imageObjectMeta = new ObjectMetadata();
+      imageObjectMeta.setContentLength(outputContentLength.longValue());
+      PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in, null);
       client.putObject(req);
+      tracker.completeStep(); // step 2
     } catch (IOException e) {
-      throw new RuntimeException("Error writing image data to " + imageObjectKey, e);
+      throw new RuntimeException("Error uploading image data to " + imageObjectKey, e);
     }
 
     try {
       SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
           new String(Hex.encodeHex(outputDigest.digest())), outputContentLength.longValue(),
           new String(Hex.encodeHex(inputDigest.digest())), inputContentLength.longValue());
-      String infoJson = OBJECT_MAPPER.writeValueAsString(info);
-      client.putObject(bucketName, metaObjectKey, infoJson);
+      byte[] infoJson = OBJECT_MAPPER.writeValueAsBytes(info);
+      ObjectMetadata metaObjectMeta = new ObjectMetadata();
+      metaObjectMeta.setContentLength(infoJson.length);
+      metaObjectMeta.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+      try (InputStream in = new TaskStepTrackerInputStream(infoJson.length, tracker,
+          new ByteArrayInputStream(infoJson))) {
+        client.putObject(bucketName, metaObjectKey, in, metaObjectMeta);
+        tracker.completeStep(); // step 3
+      }
       return findOne(id);
     } catch (IOException e) {
       throw new RuntimeException("Error writing image metadata to " + metaObjectKey, e);
@@ -259,6 +285,21 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
    */
   public void setImageCache(DataStreamCache imageCache) {
     this.imageCache = imageCache;
+  }
+
+  /**
+   * Set a directory to store temporary data files in.
+   * 
+   * <p>
+   * This directory will be used to hold compressed images files, so the file system must be large
+   * enough to hold that data.
+   * </p>
+   * 
+   * @param workDir
+   *          the work directory to use
+   */
+  public void setWorkDir(Path workDir) {
+    this.workDir = workDir;
   }
 
 }

@@ -169,6 +169,11 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
   }
 
   @Override
+  public int getSaveTaskStepCount() {
+    return 1;
+  }
+
+  @Override
   public SolarNodeImage save(SolarNodeImage image, TaskStepTracker tracker) {
     String id = image.getId();
     String filename = image.getFilename();
@@ -203,6 +208,7 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
       } catch (IOException e) {
         throw new RuntimeException("Error writing image metadata to " + jsonFile, e);
       }
+      tracker.completeStep();
       FileSystemResource rsrc = new FileSystemResource(file.toFile());
       return new ResourceSolarNodeImage(info, rsrc);
     } catch (CompressorException | IOException e) {
