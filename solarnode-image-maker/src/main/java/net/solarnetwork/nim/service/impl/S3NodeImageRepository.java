@@ -210,48 +210,56 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
     MutableLong inputContentLength = new MutableLong(0);
     MutableLong outputContentLength = new MutableLong(0);
 
-    try (InputStream in = image.getInputStream();
-        OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
-      log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), file,
-          getCompressionType(), (int) (getCompressionRatio() * 100));
-      FileCopyUtils.copy(in,
-          new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
-              new MessageDigestOutputStream(inputDigest, inputContentLength,
-                  createCompressorOutputStream(
-                      new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
-      tracker.completeStep(); // step 1
-    } catch (CompressorException | IOException e) {
-      throw new RuntimeException("Error compressing image data to " + file, e);
-    }
-
-    try (InputStream in = new TaskStepTrackerInputStream(outputContentLength.longValue(), tracker,
-        new BufferedInputStream(Files.newInputStream(file)))) {
-      log.info("Uploading image {} to {}", file, imageObjectKey);
-      ObjectMetadata imageObjectMeta = new ObjectMetadata();
-      imageObjectMeta.setContentLength(outputContentLength.longValue());
-      PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in, null);
-      client.putObject(req);
-      tracker.completeStep(); // step 2
-    } catch (IOException e) {
-      throw new RuntimeException("Error uploading image data to " + imageObjectKey, e);
-    }
-
     try {
-      SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
-          new String(Hex.encodeHex(outputDigest.digest())), outputContentLength.longValue(),
-          new String(Hex.encodeHex(inputDigest.digest())), inputContentLength.longValue());
-      byte[] infoJson = OBJECT_MAPPER.writeValueAsBytes(info);
-      ObjectMetadata metaObjectMeta = new ObjectMetadata();
-      metaObjectMeta.setContentLength(infoJson.length);
-      metaObjectMeta.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
-      try (InputStream in = new TaskStepTrackerInputStream(infoJson.length, tracker,
-          new ByteArrayInputStream(infoJson))) {
-        client.putObject(bucketName, metaObjectKey, in, metaObjectMeta);
-        tracker.completeStep(); // step 3
+      try (InputStream in = image.getInputStream();
+          OutputStream out = new BufferedOutputStream(new FileOutputStream(file.toFile()))) {
+        log.info("Compressing image {} to {} using {} @ {}%", image.getFilename(), file,
+            getCompressionType(), (int) (getCompressionRatio() * 100));
+        FileCopyUtils.copy(in,
+            new TaskStepTrackerOutputStream(expectedInputContentLength, tracker,
+                new MessageDigestOutputStream(inputDigest, inputContentLength,
+                    createCompressorOutputStream(
+                        new MessageDigestOutputStream(outputDigest, outputContentLength, out)))));
+        tracker.completeStep(); // step 1
+      } catch (CompressorException | IOException e) {
+        throw new RuntimeException("Error compressing image data to " + file, e);
       }
-      return findOne(id);
-    } catch (IOException e) {
-      throw new RuntimeException("Error writing image metadata to " + metaObjectKey, e);
+
+      try (InputStream in = new TaskStepTrackerInputStream(outputContentLength.longValue(), tracker,
+          new BufferedInputStream(Files.newInputStream(file)))) {
+        log.info("Uploading image {} to {}", file, imageObjectKey);
+        ObjectMetadata imageObjectMeta = new ObjectMetadata();
+        imageObjectMeta.setContentLength(outputContentLength.longValue());
+        PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in, null);
+        client.putObject(req);
+        tracker.completeStep(); // step 2
+      } catch (IOException e) {
+        throw new RuntimeException("Error uploading image data to " + imageObjectKey, e);
+      }
+
+      try {
+        SolarNodeImageInfo info = new BasicSolarNodeImageInfo(id,
+            new String(Hex.encodeHex(outputDigest.digest())), outputContentLength.longValue(),
+            new String(Hex.encodeHex(inputDigest.digest())), inputContentLength.longValue());
+        byte[] infoJson = OBJECT_MAPPER.writeValueAsBytes(info);
+        ObjectMetadata metaObjectMeta = new ObjectMetadata();
+        metaObjectMeta.setContentLength(infoJson.length);
+        metaObjectMeta.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+        try (InputStream in = new TaskStepTrackerInputStream(infoJson.length, tracker,
+            new ByteArrayInputStream(infoJson))) {
+          client.putObject(bucketName, metaObjectKey, in, metaObjectMeta);
+          tracker.completeStep(); // step 3
+        }
+        return findOne(id);
+      } catch (IOException e) {
+        throw new RuntimeException("Error writing image metadata to " + metaObjectKey, e);
+      }
+    } finally {
+      try {
+        Files.deleteIfExists(file);
+      } catch (IOException e) {
+        log.warn("Error deleting temporary image file " + file + ": " + e.getMessage());
+      }
     }
   }
 
