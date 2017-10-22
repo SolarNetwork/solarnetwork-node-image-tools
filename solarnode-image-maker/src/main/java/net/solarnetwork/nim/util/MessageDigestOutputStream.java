@@ -30,11 +30,7 @@ import java.security.MessageDigest;
 import org.apache.commons.lang3.mutable.MutableLong;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * OutputStream that calculates a message digest and tracks the number of bytes written.
  * 
  * @author matt
  * @version 1.0
