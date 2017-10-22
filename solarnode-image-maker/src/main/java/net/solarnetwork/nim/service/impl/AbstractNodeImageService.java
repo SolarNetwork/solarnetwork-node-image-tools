@@ -165,7 +165,8 @@ public abstract class AbstractNodeImageService implements NodeImageService {
 
           tracker.setMessage("Customizing image");
           ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
-              options, tracker); // steps 2-N
+              options, tracker); // step 2
+          tracker.completeStep();
 
           if (result.isSuccess() && result.getImageFile() != null) {
             // compress the image while copying into repo
@@ -174,8 +175,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
             ResourceSolarNodeImage image = new ResourceSolarNodeImage(
                 new BasicSolarNodeImageInfo(outputId, null, 0, null, imageResource.contentLength()),
                 imageResource);
-            SolarNodeImage output = nodeImageRepository.save(image, tracker);
-            tracker.completeStep(); // step N+2
+            SolarNodeImage output = nodeImageRepository.save(image, tracker); // steps 3-N
             tracker.setMessage("Done");
             return output;
           }
