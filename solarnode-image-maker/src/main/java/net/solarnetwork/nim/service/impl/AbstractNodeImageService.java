@@ -207,7 +207,14 @@ public abstract class AbstractNodeImageService implements NodeImageService {
 
     Future<SolarNodeImage> result = executorService.submit(task);
     SolarNodeImageReceiptFuture receipt = new SolarNodeImageReceiptFuture(receiptId,
-        sourceImage.getId(), result, tracker);
+        sourceImage.getId(), result, tracker) {
+
+      @Override
+      protected String getDownloadUrlInternal(SolarNodeImage image) {
+        return nodeImageRepository.getDownloadUrl(image);
+      }
+
+    };
     receipts.put(taskId, receipt);
     return receipt;
   }

@@ -34,7 +34,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -94,6 +96,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
   private Path workDir = Paths.get(System.getProperty("java.io.tmpdir"));
   private DataStreamCache imageCache;
   private int maximumKeysPerRequest = 500;
+  private long downloadExpirationSeconds = TimeUnit.HOURS.toSeconds(1);
 
   /**
    * Constructor.
@@ -165,6 +168,16 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
         absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id + IMAGE_OBJECT_KEY_SUFFIX));
     S3Object object = client.getObject(bucketName, metaObjectKey);
     return new S3SolarNodeImage(id, object, imageObjectKey, client, imageCache);
+  }
+
+  @Override
+  public String getDownloadUrl(SolarNodeImage image) {
+    final String imageObjectKey = MaxCompressorStreamFactory.getCompressedFilename(
+        getCompressionType(),
+        absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + image.getId() + IMAGE_OBJECT_KEY_SUFFIX));
+    Date expiration = new Date(
+        System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(downloadExpirationSeconds));
+    return client.generatePresignedUrl(bucketName, imageObjectKey, expiration).toString();
   }
 
   @Override
@@ -295,6 +308,16 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
    */
   public void setWorkDir(Path workDir) {
     this.workDir = workDir;
+  }
+
+  /**
+   * Set the number of seconds for download links to be valid for.
+   * 
+   * @param downloadExpirationSeconds
+   *          the number of seconds; defaults to 1 hour
+   */
+  public void setDownloadExpirationSeconds(long downloadExpirationSeconds) {
+    this.downloadExpirationSeconds = downloadExpirationSeconds;
   }
 
 }

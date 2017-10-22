@@ -34,6 +34,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
 
@@ -57,6 +58,11 @@ public abstract class AbstractNodeImageRepository implements NodeImageRepository
 
   /** A class-level logger. */
   protected final Logger log = LoggerFactory.getLogger(getClass());
+
+  @Override
+  public String getDownloadUrl(SolarNodeImage image) {
+    return null;
+  }
 
   /**
    * Create a compressing output stream.

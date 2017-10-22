@@ -51,4 +51,17 @@ public interface NodeImageRepository {
    */
   SolarNodeImage findOne(String id);
 
+  /**
+   * Get an external URL for downloading the image data.
+   * 
+   * <p>
+   * Some repositories might provide direct download URLs, for example cloud storage like S3.
+   * </p>
+   * 
+   * @param image
+   *          the image to get a download URL for
+   * @return the URL, or {@literal null} if not supported
+   */
+  String getDownloadUrl(SolarNodeImage image);
+
 }

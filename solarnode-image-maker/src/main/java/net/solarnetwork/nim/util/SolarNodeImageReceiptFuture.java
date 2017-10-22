@@ -145,4 +145,31 @@ public class SolarNodeImageReceiptFuture implements SolarNodeImageReceipt {
     return tracker.getCompletedDate();
   }
 
+  @Override
+  public final String getDownloadUrl() {
+    if (!isDone() || isCancelled() || getPercentComplete() < 1f) {
+      return null;
+    }
+    try {
+      return getDownloadUrlInternal(get());
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Hook for a generated download URL.
+   * 
+   * <p>
+   * This method returns {@literal null}. Extending classes can provide an actual value.
+   * </p>
+   * 
+   * @param image
+   *          the image
+   * @return the download URL
+   */
+  protected String getDownloadUrlInternal(SolarNodeImage image) {
+    return null;
+  }
+
 }

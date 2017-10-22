@@ -110,4 +110,11 @@ public interface SolarNodeImageReceipt extends Future<SolarNodeImage> {
    * @return the finished image info, or {@literal null} if not available yet
    */
   SolarNodeImageInfo getImageInfo();
+
+  /**
+   * Get a URL for a direct download of the finished image.
+   * 
+   * @return a direct download link
+   */
+  String getDownloadUrl();
 }
