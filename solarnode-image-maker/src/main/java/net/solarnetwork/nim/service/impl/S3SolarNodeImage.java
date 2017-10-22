@@ -49,7 +49,7 @@ public class S3SolarNodeImage implements SolarNodeImage {
   private final String bucketName;
   private final String objectKey;
   private final String imageObjectKey;
-  private String filename;
+  private final String filename;
   private final AmazonS3 client;
   private final DataStreamCache imageCache;
 

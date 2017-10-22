@@ -69,7 +69,7 @@ public class CachingFileInputStream extends TeeInputStream {
   public CachingFileInputStream(InputStream in, Path temporaryCacheFile, Path cacheFile, Lock lock)
       throws IOException {
     super(in, new BufferedOutputStream(
-        Files.newOutputStream(temporaryCacheFile, StandardOpenOption.WRITE)), false);
+        Files.newOutputStream(temporaryCacheFile, StandardOpenOption.WRITE)), true);
     this.temporaryCacheFile = temporaryCacheFile;
     this.cacheFile = cacheFile;
     this.lock = lock;
@@ -77,7 +77,7 @@ public class CachingFileInputStream extends TeeInputStream {
 
   @Override
   public int read() throws IOException {
-    int b = super.read();
+    final int b = super.read();
     if (b < 0) {
       completeCacheFile();
     }
@@ -86,7 +86,7 @@ public class CachingFileInputStream extends TeeInputStream {
 
   @Override
   public int read(byte[] b) throws IOException {
-    int count = super.read(b);
+    final int count = super.read(b);
     if (count < 0) {
       completeCacheFile();
     }
@@ -95,7 +95,7 @@ public class CachingFileInputStream extends TeeInputStream {
 
   @Override
   public int read(byte[] b, int off, int len) throws IOException {
-    int count = super.read(b, off, len);
+    final int count = super.read(b, off, len);
     if (count < 0) {
       completeCacheFile();
     }
@@ -103,12 +103,21 @@ public class CachingFileInputStream extends TeeInputStream {
   }
 
   private void completeCacheFile() throws IOException {
+    if (complete) {
+      return;
+    }
     try {
       Files.move(temporaryCacheFile, cacheFile, StandardCopyOption.REPLACE_EXISTING);
     } finally {
       complete = true;
       lock.unlock();
     }
+  }
+
+  @Override
+  public void close() throws IOException {
+    super.close();
+    completeCacheFile();
   }
 
   @Override

@@ -30,7 +30,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+import net.solarnetwork.nim.service.impl.FileSystemDataStreamCache;
 import net.solarnetwork.nim.service.impl.FileSystemNodeImageRepository;
+import net.solarnetwork.nim.service.impl.S3NodeImageRepository;
 
 /**
  * Configuration for the node image repository.
@@ -52,6 +59,24 @@ public class NodeImageRepositoryConfig {
 
   @Value("${repo.dest.compression.ratio:1}")
   private float fsDestRepoCompressionRatio = 1f;
+
+  @Value("${repo.source.s3.region:us-west-2}")
+  private String s3Region = "us-west-2";
+
+  @Value("${repo.source.s3.bucket:solarnetwork-dev-testing}")
+  private String s3BucketName = "solarnetwork-dev-testing";
+
+  @Value("${repo.source.s3.objectKeyPrefix:solarnode-images/}")
+  private String s3ObjectKeyPrefix = "solarnode-images/";
+
+  @Value("${repo.source.s3.accessKey:#{null}}")
+  private String s3AccessKey = null;
+
+  @Value("${repo.source.s3.secretKey:#{null}}")
+  private String s3SecretKey = null;
+
+  @Value("${repo.source.s3.cache.path:/var/tmp/node-image-cache}")
+  private File s3SourceRepoCacheDirectory = new File("/var/tmp/node-image-cache");
 
   /**
    * The source repository to pull base images from.
@@ -77,7 +102,7 @@ public class NodeImageRepositoryConfig {
    * @return the destination image repo
    */
   @Bean
-  @Profile({ "default", "development" })
+  @Profile({ "default", "development", "staging" })
   @Qualifier("dest")
   public FileSystemNodeImageRepository fsDestNodeImageRepository() {
     if (!fsDestRepoRootDirectory.isDirectory()) {
@@ -90,6 +115,36 @@ public class NodeImageRepositoryConfig {
         fsDestRepoRootDirectory.toPath());
     repo.setCompressionRatio(fsDestRepoCompressionRatio);
     repo.setCompressionType(fsDestRepoCompressionType);
+    return repo;
+  }
+
+  /**
+   * The S3 source repository to pull base images from.
+   * 
+   * @return the source image repo
+   */
+  @Bean
+  @Profile({ "staging", "production" })
+  @Qualifier("source")
+  public S3NodeImageRepository s3SourceNodeImageRepository() {
+    AmazonS3 client = AmazonS3ClientBuilder.standard().withRegion(s3Region)
+        .withCredentials(
+            new AWSStaticCredentialsProvider(new BasicAWSCredentials(s3AccessKey, s3SecretKey)))
+        .build();
+    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3BucketName, s3ObjectKeyPrefix);
+
+    if (!s3SourceRepoCacheDirectory.isDirectory()) {
+      if (!s3SourceRepoCacheDirectory.mkdirs()) {
+        throw new RuntimeException(
+            "S3 src repo cache dir " + s3SourceRepoCacheDirectory.getAbsolutePath()
+                + " does not exist and unable to create");
+      }
+    }
+
+    FileSystemDataStreamCache imageCache = new FileSystemDataStreamCache(
+        s3SourceRepoCacheDirectory.toPath());
+    repo.setImageCache(imageCache);
+
     return repo;
   }
 

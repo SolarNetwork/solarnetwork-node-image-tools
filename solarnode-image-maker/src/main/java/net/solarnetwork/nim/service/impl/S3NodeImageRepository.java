@@ -62,6 +62,9 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
    */
   public static final String DATA_OBJECT_KEY_PREFIX = "node-image-data/";
 
+  private static final String METADATA_OBJECT_KEY_SUFFIX = ".json";
+  private static final String IMAGE_OBJECT_KEY_SUFFIX = ".img";
+
   private final AmazonS3 client;
   private final String bucketName;
   private final String objectKeyPrefix;
@@ -107,7 +110,12 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
       listResult = client.listObjectsV2(req);
 
       for (S3ObjectSummary objectSummary : listResult.getObjectSummaries()) {
-        String id = StringUtils.getFilename(objectSummary.getKey());
+        if (!objectSummary.getKey().endsWith(METADATA_OBJECT_KEY_SUFFIX)) {
+          continue;
+        }
+        String id = StringUtils.getFilename(objectSummary.getKey().substring(0,
+            objectSummary.getKey().length() - METADATA_OBJECT_KEY_SUFFIX.length()));
+
         result.add(new S3SolarNodeImage(id, objectSummary.getBucketName(), objectSummary.getKey(),
             absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id), client, imageCache));
       }
@@ -140,9 +148,11 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
   }
 
   private S3SolarNodeImage findOneInternal(String id) throws IOException {
-    final String metaObjectKey = absoluteObjectKey(META_OBJECT_KEY_PREFIX + id);
+    final String metaObjectKey = absoluteObjectKey(
+        META_OBJECT_KEY_PREFIX + id + METADATA_OBJECT_KEY_SUFFIX);
     final String imageObjectKey = MaxCompressorStreamFactory.getCompressedFilename(
-        getCompressionType(), absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id));
+        getCompressionType(),
+        absoluteObjectKey(DATA_OBJECT_KEY_PREFIX + id + IMAGE_OBJECT_KEY_SUFFIX));
     S3Object object = client.getObject(bucketName, metaObjectKey);
     return new S3SolarNodeImage(id, object, imageObjectKey, client, imageCache);
   }
