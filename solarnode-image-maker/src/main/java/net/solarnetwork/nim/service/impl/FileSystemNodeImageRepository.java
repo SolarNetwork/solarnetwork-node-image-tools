@@ -48,7 +48,6 @@ import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
-import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
 import net.solarnetwork.nim.util.MessageDigestOutputStream;
 import net.solarnetwork.nim.util.TaskStepTracker;
@@ -102,19 +101,6 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
 
   @Override
   public SolarNodeImage findOne(String id) {
-    try {
-      SolarNodeImage result = findOneInternal(id);
-      if (result != null) {
-        result = new DecompressingSolarNodeImage(result);
-      }
-      return result;
-    } catch (IOException e) {
-      throw new RuntimeException("Error getting image " + id + ": " + e.getMessage(), e);
-    }
-  }
-
-  @Override
-  public SolarNodeImage findOneCompressed(String id) {
     try {
       return findOneInternal(id);
     } catch (IOException e) {

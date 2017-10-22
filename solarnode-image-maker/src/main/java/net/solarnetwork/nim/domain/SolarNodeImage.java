@@ -36,10 +36,6 @@ public interface SolarNodeImage extends SolarNodeImageInfo {
   /**
    * Get an input stream for the image contents.
    * 
-   * <p>
-   * This stream should be an uncompressed stream of the raw image data.
-   * </p>
-   * 
    * @return the input stream
    * @throws IOException
    *           if there is a problem creating the stream

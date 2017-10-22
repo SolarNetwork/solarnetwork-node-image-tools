@@ -51,15 +51,4 @@ public interface NodeImageRepository {
    */
   SolarNodeImage findOne(String id);
 
-  /**
-   * Retrieves a compressed SolarNodeImage by its ID.
-   * 
-   * @param id
-   *          must not be {@literal null}.
-   * @return the entity with the given id or {@literal null} if none found
-   * @throws IllegalArgumentException
-   *           if {@code id} is {@literal null}
-   */
-  SolarNodeImage findOneCompressed(String id);
-
 }

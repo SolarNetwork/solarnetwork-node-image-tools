@@ -61,6 +61,7 @@ import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
 import net.solarnetwork.nim.domain.SolarNodeImageResource;
 import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
+import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 import net.solarnetwork.nim.util.SolarNodeImageReceiptFuture;
 import net.solarnetwork.nim.util.TaskStepTracker;
 import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
@@ -155,10 +156,10 @@ public abstract class AbstractNodeImageService implements NodeImageService {
       public SolarNodeImage call() throws Exception {
         tracker.start();
         tracker.setMessage("Uncompressing source image");
-        log.info("Transferring image {} to {}", sourceImage.getId(), imageDest);
+        log.info("Decompressing image {} to {}", sourceImage.getId(), imageDest);
         try {
           // TODO: use DigestOutputStream to verify digest of written file
-          FileCopyUtils.copy(sourceImage.getInputStream(),
+          FileCopyUtils.copy(new DecompressingSolarNodeImage(sourceImage).getInputStream(),
               new TaskStepTrackerOutputStream(sourceImage.getUncompressedContentLength(), tracker,
                   new BufferedOutputStream(new FileOutputStream(imageDest.toFile()))));
           tracker.completeStep(); // step 1
