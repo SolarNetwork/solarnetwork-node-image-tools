@@ -48,7 +48,7 @@ public abstract class AbstractNodeImageRepository implements NodeImageRepository
   /**
    * A mapper to use for dealing with JSON metadata.
    */
-  protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
       .setSerializationInclusion(JsonInclude.Include.NON_ABSENT)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 

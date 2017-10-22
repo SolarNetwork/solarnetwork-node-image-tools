@@ -17,7 +17,7 @@ repositories {
 }
 
 checkstyle {
-   toolVersion ="7.6.1"
+	toolVersion "8.0"
 }
 
 ext {
@@ -49,6 +49,7 @@ dependencies {
 	compile "com.fasterxml.jackson.datatype:jackson-datatype-joda:${jacksonVersion}"
 	
 	// Utilities
+	compile 'commons-io:commons-io:2.6+'
 	compile 'org.apache.commons:commons-compress:1.15+'
 	compile 'org.apache.commons:commons-lang3:3.4+'
 	compile 'org.tukaani:xz:1.6+'
@@ -59,7 +60,6 @@ dependencies {
 
     // Testing
     testCompile 'org.springframework.boot:spring-boot-starter-test'
-    testCompile 'org.mock-server:mockserver-netty:3.10.7'
     testCompile 'com.spotify:hamcrest-jackson:1.1.0'
     testCompile 'com.spotify:hamcrest-pojo:1.1.0'
 

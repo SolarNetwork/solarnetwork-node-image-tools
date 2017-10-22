@@ -48,7 +48,7 @@ import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
-import net.solarnetwork.nim.util.DecompressingResource;
+import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
 import net.solarnetwork.nim.util.MessageDigestOutputStream;
 import net.solarnetwork.nim.util.TaskStepTracker;
@@ -103,14 +103,13 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
   @Override
   public SolarNodeImage findOne(String id) {
     try {
-      ResourceSolarNodeImage result = findOneInternal(id);
+      SolarNodeImage result = findOneInternal(id);
       if (result != null) {
-        result = new ResourceSolarNodeImage(result.getInfo(),
-            new DecompressingResource(result.getImageResource()));
+        result = new DecompressingSolarNodeImage(result);
       }
       return result;
     } catch (IOException e) {
-      throw new RuntimeException("Error listing node image infos: " + e.getMessage(), e);
+      throw new RuntimeException("Error getting image " + id + ": " + e.getMessage(), e);
     }
   }
 
@@ -119,7 +118,7 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
     try {
       return findOneInternal(id);
     } catch (IOException e) {
-      throw new RuntimeException("Error listing node image infos: " + e.getMessage(), e);
+      throw new RuntimeException("Error getting image " + id + ": " + e.getMessage(), e);
     }
   }
 
