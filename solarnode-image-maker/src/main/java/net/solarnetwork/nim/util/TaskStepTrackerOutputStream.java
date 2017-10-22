@@ -27,11 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * OutputStream with progress feedback support via a {@link TaskStepTracker}.
  * 
  * @author matt
  * @version 1.0
