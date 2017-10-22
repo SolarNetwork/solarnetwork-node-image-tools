@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Supplier;
 
+import org.springframework.util.StringUtils;
+
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -47,7 +49,7 @@ public class S3SolarNodeImage implements SolarNodeImage {
   private final String bucketName;
   private final String objectKey;
   private final String imageObjectKey;
-  private final String filename;
+  private String filename;
   private final AmazonS3 client;
   private final DataStreamCache imageCache;
 
@@ -114,11 +116,7 @@ public class S3SolarNodeImage implements SolarNodeImage {
   }
 
   private static String filenameFromObjectKey(String imageObjectKey) {
-    int lastSlashIdx = imageObjectKey.lastIndexOf('/');
-    if (lastSlashIdx > 0 && lastSlashIdx + 1 < imageObjectKey.length()) {
-      return imageObjectKey.substring(lastSlashIdx + 1);
-    }
-    return imageObjectKey;
+    return StringUtils.getFilename(imageObjectKey);
   }
 
   @Override
