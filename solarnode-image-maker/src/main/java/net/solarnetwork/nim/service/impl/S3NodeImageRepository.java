@@ -230,7 +230,8 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
         log.info("Uploading image {} to {}", file, imageObjectKey);
         ObjectMetadata imageObjectMeta = new ObjectMetadata();
         imageObjectMeta.setContentLength(outputContentLength.longValue());
-        PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in, null);
+        PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in,
+            imageObjectMeta);
         client.putObject(req);
         tracker.completeStep(); // step 2
       } catch (IOException e) {
