@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +42,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.joda.time.Duration;
 import org.joda.time.ReadableDuration;
 import org.joda.time.format.PeriodFormat;
@@ -62,6 +65,7 @@ import net.solarnetwork.nim.domain.SolarNodeImageResource;
 import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
+import net.solarnetwork.nim.util.MessageDigestInputStream;
 import net.solarnetwork.nim.util.SolarNodeImageReceiptFuture;
 import net.solarnetwork.nim.util.TaskStepTracker;
 import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
@@ -149,6 +153,8 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     // steps are: 1) uncompress image 2) customize image 3) compress image
     final TaskStepTracker tracker = new TaskStepTracker(
         2 + nodeImageRepository.getSaveTaskStepCount());
+    final MutableLong uncompressedLength = new MutableLong(0);
+    final MessageDigest uncompressedDigest = DigestUtils.getSha256Digest();
 
     Callable<SolarNodeImage> task = new Callable<SolarNodeImage>() {
 
@@ -158,11 +164,21 @@ public abstract class AbstractNodeImageService implements NodeImageService {
         tracker.setMessage("Uncompressing source image");
         log.info("Decompressing image {} to {}", sourceImage.getId(), imageDest);
         try {
-          // TODO: use DigestOutputStream to verify digest of written file
-          FileCopyUtils.copy(new DecompressingSolarNodeImage(sourceImage).getInputStream(),
+          FileCopyUtils.copy(
+              new MessageDigestInputStream(uncompressedDigest, uncompressedLength,
+                  new DecompressingSolarNodeImage(sourceImage).getInputStream()),
               new TaskStepTrackerOutputStream(sourceImage.getUncompressedContentLength(), tracker,
                   new BufferedOutputStream(new FileOutputStream(imageDest.toFile()))));
           tracker.completeStep(); // step 1
+
+          // verify digest
+          final String decompressedImageDigest = new String(
+              Hex.encodeHex(uncompressedDigest.digest()));
+          if (!sourceImage.getUncompressedSha256().equalsIgnoreCase(decompressedImageDigest)) {
+            throw new RuntimeException("Image " + sourceImage.getId()
+                + "uncompressed SHA-256 digest " + decompressedImageDigest + " does not match "
+                + sourceImage.getUncompressedSha256());
+          }
 
           tracker.setMessage("Customizing image");
           ImageSetupResult result = createImageInternal(key, sourceImage, imageDest, resourceFiles,
