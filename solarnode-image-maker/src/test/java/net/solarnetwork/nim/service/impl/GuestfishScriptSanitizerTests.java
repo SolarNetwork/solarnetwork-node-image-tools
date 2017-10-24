@@ -134,4 +134,18 @@ public class GuestfishScriptSanitizerTests {
     }
   }
 
+  @Test
+  public void pipeCommandRestricted() throws Exception {
+    URL scriptUrl = getClass().getResource("sanitizer-test-08.fish");
+    Path scriptFile = Paths.get(scriptUrl.toURI());
+    GuestfishScriptSanitizer sanitizer = new GuestfishScriptSanitizer();
+    try {
+      sanitizer.validate(scriptFile);
+      Assert.fail("Expected NodeImageScriptException exception");
+    } catch (NodeImageScriptException e) {
+      assertThat(e.getScriptName(), equalTo("sanitizer-test-08.fish"));
+      assertThat(e.getLineNumber(), equalTo(2));
+    }
+  }
+
 }

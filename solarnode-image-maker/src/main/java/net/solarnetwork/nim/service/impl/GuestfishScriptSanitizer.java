@@ -50,6 +50,11 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
   public static final Pattern LCD_CMD_PAT = Pattern.compile("^\\s*lcd");
 
   /**
+   * The pattern for a {@literal guestfish} pipe command.
+   */
+  public static final Pattern LOCAL_PIPE_CMD_PAT = Pattern.compile("\\|");
+
+  /**
    * Validate the contents of the script file.
    * 
    * @throws NodeImageScriptException
@@ -67,6 +72,11 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
         if (LOCAL_CMD_PAT.matcher(line).find()) {
           throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
               "Local commands are not supported: " + line);
+        }
+        if (LOCAL_PIPE_CMD_PAT.matcher(line).find()) {
+          throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
+              "Local pipe commands are not supported: " + line);
+
         }
         if (LCD_CMD_PAT.matcher(line).find()) {
           throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
