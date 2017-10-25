@@ -50,6 +50,21 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
   public static final Pattern LCD_CMD_PAT = Pattern.compile("^\\s*lcd");
 
   /**
+   * The pattern for a {@literal guestfish} display command.
+   */
+  public static final Pattern DISPLAY_CMD_PAT = Pattern.compile("^\\s*display");
+
+  /**
+   * The pattern for a {@literal guestfish} edit command.
+   */
+  public static final Pattern EDIT_CMD_PAT = Pattern.compile("^\\s*(?edit|emacs|vi)");
+
+  /**
+   * The pattern for a {@literal guestfish} event command.
+   */
+  public static final Pattern EVENT_CMD_PAT = Pattern.compile("^\\s*event");
+
+  /**
    * The pattern for a {@literal guestfish} pipe command.
    */
   public static final Pattern LOCAL_PIPE_CMD_PAT = Pattern.compile("\\|");
@@ -77,6 +92,18 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
           throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
               "Local pipe commands are not supported: " + line);
 
+        }
+        if (DISPLAY_CMD_PAT.matcher(line).find()) {
+          throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
+              "The display command is not supported: " + line);
+        }
+        if (EDIT_CMD_PAT.matcher(line).find()) {
+          throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
+              "The edit command is not supported: " + line);
+        }
+        if (EVENT_CMD_PAT.matcher(line).find()) {
+          throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
+              "The event command is not supported: " + line);
         }
         if (LCD_CMD_PAT.matcher(line).find()) {
           throw new NodeImageScriptException(scriptFile.getFileName().toString(), lineno,
