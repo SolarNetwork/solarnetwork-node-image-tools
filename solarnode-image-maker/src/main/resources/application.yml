@@ -51,4 +51,8 @@ logging:
 
 ---
 spring:
+  profiles: staging
+
+---
+spring:
   profiles: production
