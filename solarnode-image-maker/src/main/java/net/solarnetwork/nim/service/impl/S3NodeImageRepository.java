@@ -227,6 +227,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
       try (InputStream in = new TaskStepTrackerInputStream(outputContentLength.longValue(), tracker,
           new BufferedInputStream(Files.newInputStream(file)))) {
         log.info("Uploading image {} to {}", file, imageObjectKey);
+        tracker.setMessage("Uploading customized image");
         ObjectMetadata imageObjectMeta = new ObjectMetadata();
         imageObjectMeta.setContentLength(outputContentLength.longValue());
         PutObjectRequest req = new PutObjectRequest(bucketName, imageObjectKey, in,
