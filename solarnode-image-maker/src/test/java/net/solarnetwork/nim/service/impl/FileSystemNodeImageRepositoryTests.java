@@ -42,6 +42,7 @@ import org.springframework.util.FileCopyUtils;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
 
 /**
  * Test cases for the {@link FileSystemNodeImageRepository} class.
@@ -72,8 +73,8 @@ public class FileSystemNodeImageRepositoryTests {
   public void getImage() throws IOException {
     SolarNodeImage image = repo.findOne("foobar");
     assertThat("Image ID", image.getId(), is("foobar"));
-    String data = FileCopyUtils
-        .copyToString(new InputStreamReader(image.getInputStream(), "UTF-8"));
+    String data = FileCopyUtils.copyToString(
+        new InputStreamReader(new DecompressingSolarNodeImage(image).getInputStream(), "UTF-8"));
     assertThat("Image contents", data, is("Hello, world."));
   }
 
