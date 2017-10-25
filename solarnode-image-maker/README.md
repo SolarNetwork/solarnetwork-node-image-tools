@@ -18,10 +18,160 @@ library's [guestfish][guestfish] scripting language.
 
 TODO
 
-# Example
+# Building
 
-Here's an example of the REST interactions that make up the typical image
-customization process.
+Gradle is used for building. Run the `build` task via `gradlew` to build an executable WAR:
+
+	$ ./gradlew build
+
+The finished executable WAR file will be `build/libs/solarnode-image-maker-X.war` where `X`
+is the version number.
+
+You can also build a traditional, non-executable WAR via the `war` task:
+
+	$ ./gradlew war
+
+The finished WAR file will also be `build/libs/solarnode-image-maker-X.war`.
+
+# Running
+
+The application is restricted to running on a host that has
+[libguestfs][libguestfs] available. In practical terms that means Linux
+at the time of this writing.
+
+## System requirements
+
+In general, the application requires the following items:
+
+ 1. Java 8 runtime: on Debian systems this is provided by the
+    **openjdk-8-jre-headless** package.
+ 2. [libguestfs][libguestfs]: on Debian systems this is provided by the
+    **libguestfs-tools** package.
+ 3. XZ compression support: on Debian systems this is provided by the
+    **xz-utils** package (needed if any fishscripts need XZ support)
+ 4. QEMU emulation support: on Debian systems this is provided by the
+    **qemu-user-static** package (needed if needing to manipulate
+    images for architectures different from the host, like ARM for
+    the Raspberry Pi)
+
+## Running standalone
+
+The executable WAR file can be directly executed like this:
+
+	$ java -Dspring.profiles.active=production -jar build/libs/solarnode-image-maker-0.1.war
+
+This will start the web server on port **8080** by default. The REST API can
+be accessed, for example, like
+
+	$ curl http://localhost:8080/api/v1/images/infos
+
+The `-Dspring.profiles.active=production` argument specifies the configuration
+profile to use, which can be one of `development`, `staging`, or `production`.
+To customize the configuration, create an `application-PROFILE.yml`
+configuration file in the working directory from which you start the app, where
+`PROFILE` is the profile name you're using.
+
+## Running in servlet container
+
+If the WAR is deployed into a servlet container (e.g. Tomcat) then a servlet
+context path of `/solarnode-image-maker` is used by default. Assuming the
+container is listening on port **8080**, to access the REST API you'd need to
+include that context path at the start at each API endpoint, for example:
+
+	$ curl http://localhost:8080/solarnode-image-maker/api/v1/images/infos
+
+To customize the configuration, you can configure servlet environment properties
+for the app. The method of doing this is container-specific. For Tomcat, you can
+create a `Catalina/localhost/solarnode-image-maker.xml` XML file like this:
+
+```xml
+<Context displayName="SolarNode Image Maker">
+  <Environment name="spring.profiles.active" value="production" type="java.lang.String" override="false"/>
+</Context>
+```
+
+## Runtime configuration
+
+The default configuration values can be viewed in the [application.yml][app-config]
+source file. The following tables describe the properties in more detail:
+
+### Development runtime configuration
+
+The following settings are applicable only to the `development` runtime profile:
+
+| Setting                        | Default                   | Description                                                                     |
+|--------------------------------|---------------------------|---------------------------------------------------------------------------------|
+| repo.source.fs.path            | var/repo                  | Path to the image repository used for base image files.                         |
+| repo.dest.compression.type     | xz                        | Compression format to use for customized images.                                |
+| repo.dest.compression.ratio    | 1                         | Compression level to use for customized images, between 0 (least) and 1 (most). |
+| repo.dest.fs.path              | /var/tmp/node-image-repo  | Path to image repository to save customized images to.                          |
+
+### Production runtime configuration
+
+The following settings are applicable to the `staging` and `production` runtime
+profiles:
+
+| Setting                        | Default                   | Description                                                                     |
+|--------------------------------|---------------------------|---------------------------------------------------------------------------------|
+| repo.source.s3.region          | us-west-2                 | S3 region for the image repository used for base image files.                   |
+| repo.source.s3.bucket          |                           | S3 bucket for the image repository used for base image files.                   |
+| repo.source.s3.objectKeyPrefix | solarnode-images/         | S3 object key prefix for the image repository used for base image files.        |
+| repo.source.s3.accessKey       |                           | S3 access key for the image repository used for base image files.               |
+| repo.source.s3.secretKey       |                           | S3 secret key for the image repository used for base image files.               |
+| repo.source.s3.cache.path      | /var/tmp/node-image-cache | Path to a directory to cache S3 base image files at.                            |
+| repo.dest.compression.type     | xz                        | Compression format to use for customized images.                                |
+| repo.dest.compression.ratio    | 1                         | Compression level to use for customized images, between 0 (least) and 1 (most). |
+| repo.dest.s3.region            | us-west-2                 | S3 region of the image repository to save customized images to.                 |
+| repo.dest.s3.bucket            |                           | S3 bucket of the image repository to save customized images to.                 |
+| repo.dest.s3.objectKeyPrefix   | solarnode-custom-images/  | S3 object key prefix of the image repository to save customized images to.      |
+| repo.dest.s3.accessKey         |                           | S3 access key of the image repository to save customized images to.             |
+| repo.dest.s3.secretKey         |                           | S3 secret key of the image repository to save customized images to.             |
+| repo.dest.s3.work.path         | java.io.tmpdir            | Path to a directory to use for temporary customized image file data.            |
+
+**Notes:**
+
+ * The `repo.source.s3.accessKey` and `repo.source.s3.secretKey` values are optional
+   if the S3 bucket is publicly accessible.
+ * If the `repo.dest.s3.region` and `repo.dest.s3.bucket` values match their
+   `source` equivalents and `repo.dest.s3.accessKey` is not configured, the source
+   image repository will also be used as the destination repository.
+
+# REST API
+
+The REST API is pretty simple:
+
+| Verb | Path                                          | Description                     |
+|------|-----------------------------------------------|---------------------------------|
+| GET  | /api/v1/images/infos                          | List all available base images. |
+| POST | /api/v1/images/create/`{baseImageId}`/`{key}` | Start image customization task. |
+| GET  | /api/v1/images/receipt/`{receiptId}`/`{key}`  | Get image task info and status. |
+| GET  | /api/v1/images/`{receiptId}`/`{key}`          | Get a customized image.         |
+
+The path variables used are:
+
+| Variable      | Description                                                    |
+|---------------|----------------------------------------------------------------|
+| `baseImageId` | The `id` property of a base image from `/api/v1/images/infos`. |
+| `key`         | A unique, random customization key.                            |
+| `receiptId`   | The `id` property of a customization task receipt.             |
+
+The customization process thus follows a typical flow:
+
+ 1. Call `/api/v1/images/infos` to get the `baseImageId` value of the image you
+    want to customize.
+ 2. Call `/api/v1/images/create/{baseImageId}/{key}` using a random `key` of
+    your choice, with multi-part attachments for all the data files and scripts
+    you'll use to customize the image. This will return a `receiptId`.
+ 3. Call `/api/v1/images/receipt/{receiptId}/{key}` to check the progress of the
+    customization task, and wait until the response `done` property is `true`.
+ 4. Download the customized image, either from a URL provided by the `downloadUrl`
+    property of the receipt, or via a call to `/api/v1/images/{receiptId}/{key}`.
+
+
+# Example REST API use
+
+Here's a more detailed example of the REST interactions that make up the typical
+image customization process, with example request and response values.
 
 ## List the available base images
 
@@ -106,7 +256,7 @@ Content-Type: application/json
 ```
 
 After all the data is posted, the response includes a _receipt_ that provides
-status information and a unique ID for your custom image:
+a receipt object with status information and a unique ID for your custom image:
 
 ```json
 {
@@ -133,10 +283,11 @@ finished. Once finished the `done` property will change to `true`.
 ## Check status
 
 Because creating the custom image can take a while, invoking `GET` on the
-`/api/v1/images/receipt/{receiptId}/{key}` endpoint will provide status
-information about the progress of the task. The `receiptId` value comes from the
-previous call to `/api/v1/images/create/{baseImageId}/{key}` and `key` is also
-the same value from that call. An example response looks like this:
+`/api/v1/images/receipt/{receiptId}/{key}` endpoint will provide a receipt
+object with status information about the progress of the task. The `receiptId`
+value comes from the previous call to
+`/api/v1/images/create/{baseImageId}/{key}` and `key` is also the same value
+from that call. An example response looks like this:
 
 ```json
 {
@@ -180,6 +331,7 @@ image in an `imageInfo` property. For example:
       "contentLength": 290128104,
       "id": "1cadc649-881b-45ee-85af-42a84b95993d"
     },
+    "downloadUrl": "https://testing.s3-us-west-2.amazonaws.com/solarnode-custom-images/node-image-data/1f6fea5a-7466-48f3-aa3a-1366009be69f.img.xz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20171025T230900Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3599&X-Amz-Credential=AKIAID...%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Signature=f996dd2be40...",
     "percentComplete": 1.0,
     "done": true,
     "cancelled": false,
@@ -189,5 +341,16 @@ image in an `imageInfo` property. For example:
 }
 ```
 
- [libguestfs]: http://libguestfs.org/
+## Download customized image
+
+Once the customization task completes, you can download the image either via the
+`downloadUrl` property returned in the status info of the
+`/api/v1/images/receipt/{receiptId}/{key}` endpoint or by calling the
+`/api/v1/images/{receiptId}/{key}` endpoint. Generally you should use the
+`downloadUrl` if it is provided. In this example, a pre-signed S3 URL was
+provided so the image can be downloaded directly from S3.
+
+
+ [app-config]: https://github.com/SolarNetwork/solarnetwork-node-image-tools/blob/master/solarnode-image-maker/src/main/resources/application.yml
  [guestfish]: http://libguestfs.org/guestfish.1.html
+ [libguestfs]: http://libguestfs.org/
