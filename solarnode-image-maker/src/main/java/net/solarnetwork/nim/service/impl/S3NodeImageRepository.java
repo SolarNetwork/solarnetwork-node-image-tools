@@ -93,7 +93,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
   private final String bucketName;
   private final String objectKeyPrefix;
 
-  private Path workDir = Paths.get(System.getProperty("java.io.tmpdir"));
+  private Path workDirectory = Paths.get(System.getProperty("java.io.tmpdir"));
   private DataStreamCache imageCache;
   private int maximumKeysPerRequest = 500;
   private long downloadExpirationSeconds = TimeUnit.HOURS.toSeconds(1);
@@ -196,7 +196,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
 
     final Path file;
     try {
-      file = Files.createTempFile(workDir, "node-image-", "");
+      file = Files.createTempFile(workDirectory, "node-image-", "");
     } catch (IOException e) {
       throw new RuntimeException("Error creating temporary image data file", e);
     }
@@ -303,11 +303,11 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
    * enough to hold that data.
    * </p>
    * 
-   * @param workDir
+   * @param workDirectory
    *          the work directory to use
    */
-  public void setWorkDir(Path workDir) {
-    this.workDir = workDir;
+  public void setWorkDirectory(Path workDirectory) {
+    this.workDirectory = workDirectory;
   }
 
   /**

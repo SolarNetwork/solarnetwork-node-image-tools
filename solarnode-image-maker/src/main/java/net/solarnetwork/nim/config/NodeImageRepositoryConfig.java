@@ -55,31 +55,46 @@ public class NodeImageRepositoryConfig {
   private File fsDestRepoRootDirectory = new File("/var/tmp/node-image-repo");
 
   @Value("${repo.dest.compression.type:xz}")
-  private String fsDestRepoCompressionType = "xz";
+  private String destRepoCompressionType = "xz";
 
   @Value("${repo.dest.compression.ratio:1}")
-  private float fsDestRepoCompressionRatio = 1f;
+  private float destRepoCompressionRatio = 1f;
 
   @Value("${repo.source.s3.region:us-west-2}")
-  private String s3Region = "us-west-2";
+  private String s3SourceRepoRegion = "us-west-2";
 
-  @Value("${repo.source.s3.bucket:solarnetwork-dev-testing}")
-  private String s3BucketName = "solarnetwork-dev-testing";
+  @Value("${repo.source.s3.bucket:#{null}}")
+  private String s3SourceRepoBucketName = null;
 
   @Value("${repo.source.s3.objectKeyPrefix:solarnode-images/}")
-  private String s3ObjectKeyPrefix = "solarnode-images/";
+  private String s3SourceRepoObjectKeyPrefix = "solarnode-images/";
 
   @Value("${repo.source.s3.accessKey:#{null}}")
-  private String s3AccessKey = null;
+  private String s3SourceRepoAccessKey = null;
 
   @Value("${repo.source.s3.secretKey:#{null}}")
-  private String s3SecretKey = null;
+  private String s3SourceRepoSecretKey = null;
 
   @Value("${repo.source.s3.cache.path:/var/tmp/node-image-cache}")
   private File s3SourceRepoCacheDirectory = new File("/var/tmp/node-image-cache");
 
+  @Value("${repo.dest.s3.region:us-west-2}")
+  private String s3DestRepoRegion = "us-west-2";
+
+  @Value("${repo.dest.s3.bucket:solarnetwork-dev-testing}")
+  private String s3DestRepoBucketName = null;
+
   @Value("${repo.dest.s3.objectKeyPrefix:solarnode-custom-images/}")
   private String s3DestObjectKeyPrefix = "solarnode-custom-images/";
+
+  @Value("${repo.dest.s3.accessKey:#{null}}")
+  private String s3DestRepoAccessKey = null;
+
+  @Value("${repo.dest.s3.secretKey:#{null}}")
+  private String s3DestRepoSecretKey = null;
+
+  @Value("${repo.dest.s3.work.path:#{systemProperties['java.io.tmpdir']}}")
+  private File s3DestRepoWorkDirectory = new File(System.getProperty("java.io.tmpdir"));
 
   /**
    * The source repository to pull base images from.
@@ -116,9 +131,26 @@ public class NodeImageRepositoryConfig {
     }
     FileSystemNodeImageRepository repo = new FileSystemNodeImageRepository(
         fsDestRepoRootDirectory.toPath());
-    repo.setCompressionRatio(fsDestRepoCompressionRatio);
-    repo.setCompressionType(fsDestRepoCompressionType);
+    repo.setCompressionRatio(destRepoCompressionRatio);
+    repo.setCompressionType(destRepoCompressionType);
     return repo;
+  }
+
+  /**
+   * The S3 client to use for the source repository.
+   * 
+   * @return the S3 client
+   */
+  @Bean
+  @Profile({ "staging", "production" })
+  @Qualifier("source")
+  public AmazonS3 s3SourceClient() {
+    AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard().withRegion(s3SourceRepoRegion);
+    if (s3SourceRepoAccessKey != null && s3SourceRepoSecretKey != null) {
+      builder = builder.withCredentials(new AWSStaticCredentialsProvider(
+          new BasicAWSCredentials(s3SourceRepoAccessKey, s3SourceRepoSecretKey)));
+    }
+    return builder.build();
   }
 
   /**
@@ -130,11 +162,9 @@ public class NodeImageRepositoryConfig {
   @Profile({ "staging", "production" })
   @Qualifier("source")
   public S3NodeImageRepository s3SourceNodeImageRepository() {
-    AmazonS3 client = AmazonS3ClientBuilder.standard().withRegion(s3Region)
-        .withCredentials(
-            new AWSStaticCredentialsProvider(new BasicAWSCredentials(s3AccessKey, s3SecretKey)))
-        .build();
-    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3BucketName, s3ObjectKeyPrefix);
+    AmazonS3 client = s3SourceClient();
+    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3SourceRepoBucketName,
+        s3SourceRepoObjectKeyPrefix);
 
     if (!s3SourceRepoCacheDirectory.isDirectory()) {
       if (!s3SourceRepoCacheDirectory.mkdirs()) {
@@ -160,14 +190,22 @@ public class NodeImageRepositoryConfig {
   @Profile({ "staging", "production" })
   @Qualifier("dest")
   public S3NodeImageRepository s3DestNodeImageRepository() {
-    AmazonS3 client = AmazonS3ClientBuilder.standard().withRegion(s3Region)
-        .withCredentials(
-            new AWSStaticCredentialsProvider(new BasicAWSCredentials(s3AccessKey, s3SecretKey)))
-        .build();
-    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3BucketName,
+    AmazonS3 client;
+    if (s3DestRepoRegion.equals(s3SourceRepoRegion)
+        && s3DestRepoBucketName.equals(s3SourceRepoBucketName) && s3DestRepoAccessKey == null) {
+      // reuse source S3 client for dest repo
+      client = s3SourceClient();
+    } else {
+      client = AmazonS3ClientBuilder.standard().withRegion(s3DestRepoRegion)
+          .withCredentials(new AWSStaticCredentialsProvider(
+              new BasicAWSCredentials(s3DestRepoAccessKey, s3DestRepoSecretKey)))
+          .build();
+    }
+    S3NodeImageRepository repo = new S3NodeImageRepository(client, s3DestRepoBucketName,
         s3DestObjectKeyPrefix);
-    repo.setCompressionRatio(fsDestRepoCompressionRatio);
-    repo.setCompressionType(fsDestRepoCompressionType);
+    repo.setCompressionRatio(destRepoCompressionRatio);
+    repo.setCompressionType(destRepoCompressionType);
+    repo.setWorkDirectory(s3DestRepoWorkDirectory.toPath());
     return repo;
   }
 
