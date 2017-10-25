@@ -14,9 +14,37 @@ through this application works like this:
 # Customization
 
 Customization works via a restricted version of the [libguestfs][libguestfs]
-library's [guestfish][guestfish] scripting language.
+library's [guestfish][guestfish] scripting language. The following fishscript
+commands are not supported:
 
-TODO
+| Command   | Description                                                                  |
+|-----------|------------------------------------------------------------------------------|
+| `!`       | Local commands are not allowed.                                              |
+| `<!`      | Local command redirection is not allowed.                                    |
+| `\|`       | The pipe-to-local-command feature is not supported.                          |
+| `display` | Displaying images are not supported.                                         |
+| `edit`    | Interactive editing is not supported (`emacs` and `vi` are also restricted). |
+| `event`   | Shell events are not supported.                                              |
+| `lcd`     | The "local change directory" command is not allowed.                         |
+
+Basically, using local OS commands are not allowed. A typical fishscript for
+this app would work by using `tar-in` to unarchive a set of files onto the image
+followed by a `zero-free-space` to make the image compress better. For example,
+the following script expands an `os-files.txz` archive and then calls
+`zero-free-space`, both on the root file system of the image:
+
+```
+# Copy base data
+tar-in os-files.txz / compress:xz
+
+# Zero free space to make compress of image better
+zero-free-space /
+```
+
+This script, and the `os-files.txz` referenced by it, would be passed to the app via
+a `POST` request to the [/api/v1/images/create/`{baseImageId}`/`{key}`](#rest-api) endpoint
+described later in this document.
+
 
 # Building
 
