@@ -21,7 +21,7 @@ commands are not supported:
 |-----------|------------------------------------------------------------------------------|
 | `!`       | Local commands are not allowed.                                              |
 | `<!`      | Local command redirection is not allowed.                                    |
-| `\|`       | The pipe-to-local-command feature is not supported.                          |
+| `\|`      | The pipe-to-local-command feature is not supported.                          |
 | `display` | Displaying images are not supported.                                         |
 | `edit`    | Interactive editing is not supported (`emacs` and `vi` are also restricted). |
 | `event`   | Shell events are not supported.                                              |
