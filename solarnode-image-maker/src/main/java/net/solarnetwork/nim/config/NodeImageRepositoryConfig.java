@@ -24,6 +24,8 @@ package net.solarnetwork.nim.config;
 
 import java.io.File;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -85,7 +87,7 @@ public class NodeImageRepositoryConfig {
   private String s3DestRepoBucketName = null;
 
   @Value("${repo.dest.s3.objectKeyPrefix:solarnode-custom-images/}")
-  private String s3DestObjectKeyPrefix = "solarnode-custom-images/";
+  private String s3DestRepoObjectKeyPrefix = "solarnode-custom-images/";
 
   @Value("${repo.dest.s3.accessKey:#{null}}")
   private String s3DestRepoAccessKey = null;
@@ -95,6 +97,8 @@ public class NodeImageRepositoryConfig {
 
   @Value("${repo.dest.s3.work.path:#{systemProperties['java.io.tmpdir']}}")
   private File s3DestRepoWorkDirectory = new File(System.getProperty("java.io.tmpdir"));
+
+  private final Logger log = LoggerFactory.getLogger(NodeImageRepositoryConfig.class);
 
   /**
    * The source repository to pull base images from.
@@ -165,6 +169,8 @@ public class NodeImageRepositoryConfig {
     AmazonS3 client = s3SourceClient();
     S3NodeImageRepository repo = new S3NodeImageRepository(client, s3SourceRepoBucketName,
         s3SourceRepoObjectKeyPrefix);
+    log.info("Source repository s3://{}/{}/{}; accessKey = {}", s3SourceRepoRegion,
+        s3SourceRepoBucketName, s3SourceRepoObjectKeyPrefix, s3SourceRepoAccessKey);
 
     if (!s3SourceRepoCacheDirectory.isDirectory()) {
       if (!s3SourceRepoCacheDirectory.mkdirs()) {
@@ -201,8 +207,11 @@ public class NodeImageRepositoryConfig {
               new BasicAWSCredentials(s3DestRepoAccessKey, s3DestRepoSecretKey)))
           .build();
     }
+    log.info("Destination repository s3://{}/{}/{}; accessKey = {}", s3DestRepoRegion,
+        s3DestRepoBucketName, s3DestRepoObjectKeyPrefix,
+        s3DestRepoAccessKey != null ? s3DestRepoAccessKey : s3SourceRepoAccessKey);
     S3NodeImageRepository repo = new S3NodeImageRepository(client, s3DestRepoBucketName,
-        s3DestObjectKeyPrefix);
+        s3DestRepoObjectKeyPrefix);
     repo.setCompressionRatio(destRepoCompressionRatio);
     repo.setCompressionType(destRepoCompressionType);
     repo.setWorkDirectory(s3DestRepoWorkDirectory.toPath());
