@@ -57,7 +57,7 @@ public class GuestfishScriptSanitizer implements NodeImageScriptValidator {
   /**
    * The pattern for a {@literal guestfish} edit command.
    */
-  public static final Pattern EDIT_CMD_PAT = Pattern.compile("^\\s*(?edit|emacs|vi)");
+  public static final Pattern EDIT_CMD_PAT = Pattern.compile("^\\s*(?:edit|emacs|vi)");
 
   /**
    * The pattern for a {@literal guestfish} event command.
