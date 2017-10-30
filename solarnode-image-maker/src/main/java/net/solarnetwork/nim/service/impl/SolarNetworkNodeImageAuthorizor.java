@@ -62,6 +62,7 @@ public class SolarNetworkNodeImageAuthorizor extends HttpClientSupport
     implements NodeImageAuthorizor {
 
   private static final Pattern SIGNED_HEADERS_PATTERN = Pattern.compile(",SignedHeaders=([^,]+),");
+  private static final Pattern TOKEN_PATTERN = Pattern.compile("\\sCredential=([^,]+),");
   private static final ObjectMapper MAPPER = new ObjectMapper();
 
   static {
@@ -109,7 +110,14 @@ public class SolarNetworkNodeImageAuthorizor extends HttpClientSupport
       }
       JsonNode data = node.path("data");
       if (data.isObject()) {
-        return JsonUtils.getStringMapFromTree(data);
+        String token = null;
+        Matcher tokenMatcher = TOKEN_PATTERN.matcher(authorization);
+        if (tokenMatcher.find()) {
+          token = tokenMatcher.group(1);
+        }
+        Map<String, ?> result = JsonUtils.getStringMapFromTree(data);
+        log.info("Authorized token {} via {} and received {}", token, uri, result);
+        return result;
       }
       return Collections.emptyMap();
     } catch (IOException e) {
