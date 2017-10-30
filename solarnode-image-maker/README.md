@@ -164,12 +164,24 @@ profiles:
    `source` equivalents and `repo.dest.s3.accessKey` is not configured, the source
    image repository will also be used as the destination repository.
 
+### SolarNetwork authorization runtime configuration
+
+The following settings are applicable only to the `snauth` runtime profile. If this profile is activated
+at runtime, then the `/authorize` endpoint **must** be called to generate an authorized key. See the
+REST API documentation below for more information.
+
+| Setting          | Default                       | Description                       |
+|------------------|-------------------------------|-----------------------------------|
+| solarnet.baseUrl | https://data.solarnetwork.net | Base URL to the SolarNetwork API. |
+
+
 # REST API
 
 The REST API is pretty simple:
 
 | Verb | Path                                          | Description                     |
 |------|-----------------------------------------------|---------------------------------|
+| POST | /api/v1/images/authorize                      | Get an authorized key.          |
 | GET  | /api/v1/images/infos                          | List all available base images. |
 | POST | /api/v1/images/create/`{baseImageId}`/`{key}` | Start image customization task. |
 | GET  | /api/v1/images/receipt/`{receiptId}`/`{key}`  | Get image task info and status. |
@@ -187,13 +199,34 @@ The customization process thus follows a typical flow:
 
  1. Call `/api/v1/images/infos` to get the `baseImageId` value of the image you
     want to customize.
- 2. Call `/api/v1/images/create/{baseImageId}/{key}` using a random `key` of
-    your choice, with multi-part attachments for all the data files and scripts
-    you'll use to customize the image. This will return a `receiptId`.
- 3. Call `/api/v1/images/receipt/{receiptId}/{key}` to check the progress of the
+ 2. Call `/api/v1/images/authorize` to generate a random `key`. See below for more
+    information on this endpoint.
+ 3. Call `/api/v1/images/create/{baseImageId}/{key}` using the `key` returned
+    from the previous `/authorize` call, with multi-part attachments for all the
+    data files and script you'll use to customize the image. This will return a
+    `receiptId`.
+ 4. Call `/api/v1/images/receipt/{receiptId}/{key}` to check the progress of the
     customization task, and wait until the response `done` property is `true`.
- 4. Download the customized image, either from a URL provided by the `downloadUrl`
+ 5. Download the customized image, either from a URL provided by the `downloadUrl`
     property of the receipt, or via a call to `/api/v1/images/{receiptId}/{key}`.
+
+## Authorized keys
+
+The `images/create` endpoint may require authorized keys to function. This is
+determined at runtime by activating the `snauth` profile at launch. When active,
+you must call the `images/authorize` endpoint with a pre-signed [SNWS2
+authorization][snws2] HTTP header value and associated authorization date. The
+pre-signed header value must be provided on a `X-SN-PreSignedAuthorization` HTTP
+header, and the date on a `X-SN-Date` HTTP header.
+
+The pre-signed URL requirements are:
+
+| Variable  | Description                                                                                   |
+|-----------|-----------------------------------------------------------------------------------------------|
+| HTTP verb | Must be `GET`.                                                                                |
+| URL       | Absolute URL to `/solaruser/api/v1/sec/whoami` endpoint from the `solarnet.baseUrl` base URL. |
+
+An example of this is shown below.
 
 
 # Example REST API use
@@ -223,14 +256,52 @@ available base images to choose from:
 
 In this example just one base image is available: `solarnode-deb8-ebox3300mx-1GB`.
 
+## Get authorized key
+
+Typically an authorized key will be required. To get one, we must use
+[SolarNetwork token credentials][snws2] to pre-sign a `GET` request to the
+`/solaruser/api/v1/sec/whoami` SolarNetwork endpoint. This simply validates
+the requestor is a registered SolarNetwork user.
+
+Invoking `POST` on the `/api/v1/images/authorize` endpoint thus requires
+passing two HTTP headers:
+
+ 1. `X-SN-Date` - the date used to pre-sign the call to the `/whoami` endpoint.
+ 2. `X-SN-PreSignedAuthorization` - the full pre-signed `Authorization` HTTP
+    header value for the `/whoami` endpoint.
+
+For example, for a token `foobar` with a secret `123456` requested on Mon, 30
+Oct 2017 04:23:23 GMT, the HTTP request would look similar to this:
+
+```
+POST /solarnode-image-maker/api/v1/images/authorize HTTP/1.1
+Content-Length: 0
+X-SN-Date: Mon, 30 Oct 2017 04:23:23 GMT
+X-SN-PreSignedAuthorization: SNWS2 Credential=foobar,SignedHeaders=host;x-sn-date,Signature=c13055afe54c1bff15b8267c11d9755d7217c0318c6c5e1c6b0472cf3cb1e03c
+```
+
+**Note** that the `X-SN-Date` HTTP header value used in this request must be the
+_same_ as used in the pre-signed authorization header.
+
+The result of invoking this endpoint will be a unique key that must be passed to
+subsequent endpoint calls. For example:
+
+```json
+{
+  "success": true,
+  "data": "1f7b52217eb50d64b06e3185cb3bcdeb21de1aa4db42466acc047835c71b1bee"
+}
+```
+
 ## Start custom image task
 
 Customizing an image take several minutes to complete, so it happens via an
 asynchronous process. To kick things off, invoke `POST` on the
 `/api/v1/images/create/{baseImageId}/{key}` endpoint, which requires the base
-image ID and a unique key of your choosing for path variables. The `key` can be
-anything; a good choice would be a random UUID. In this example we'll just use
-`mykey`.
+image ID and a unique key. The `key` will usually be the response from a
+previous call to the `/api/v1/images/authorize` endpoint, as described above. If
+authorized keys are not required, the `key` can be anything; a good choice would
+be a random UUID. In this example we'll just use `mykey`.
 
 This endpoint accepts `multipart/form-data` content of multiple file attachments.
 You can include any number of `dataFile` parts for the custom data you will
@@ -382,3 +453,4 @@ provided so the image can be downloaded directly from S3.
  [app-config]: https://github.com/SolarNetwork/solarnetwork-node-image-tools/blob/master/solarnode-image-maker/src/main/resources/application.yml
  [guestfish]: http://libguestfs.org/guestfish.1.html
  [libguestfs]: http://libguestfs.org/
+ [snws2]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-authentication-scheme-V2

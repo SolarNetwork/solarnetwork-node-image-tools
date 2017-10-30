@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +63,7 @@ import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImageOptions;
 import net.solarnetwork.nim.domain.SolarNodeImageReceipt;
 import net.solarnetwork.nim.domain.SolarNodeImageResource;
+import net.solarnetwork.nim.service.NodeImageAuthorizor;
 import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.DecompressingSolarNodeImage;
@@ -69,6 +71,7 @@ import net.solarnetwork.nim.util.MessageDigestInputStream;
 import net.solarnetwork.nim.util.SolarNodeImageReceiptFuture;
 import net.solarnetwork.nim.util.TaskStepTracker;
 import net.solarnetwork.nim.util.TaskStepTrackerOutputStream;
+import net.solarnetwork.util.CachedResult;
 
 /**
  * Abstract base class for {@link NodeImageService} with basic common features.
@@ -82,10 +85,13 @@ public abstract class AbstractNodeImageService implements NodeImageService {
   private Path stagingDir = Paths.get(System.getProperty("java.io.tmpdir"));
   private ExecutorService executorService = Executors.newSingleThreadExecutor();
   private UpdatableNodeImageRepository nodeImageRepository;
+  private NodeImageAuthorizor nodeImageAuthorizor = null;
 
   // @formatter:off
   private final ConcurrentMap<String, SolarNodeImageReceiptFuture> receipts 
       = new ConcurrentHashMap<>(8);
+  private final ConcurrentMap<String, CachedResult<String>> authorizedKeys
+      = new  ConcurrentHashMap<>();
   // @formatter:on
 
   /** A class-level logger. */
@@ -132,9 +138,25 @@ public abstract class AbstractNodeImageService implements NodeImageService {
   }
 
   @Override
+  public String authorize(String authorization, Date authorizationDate) {
+    String key = DigestUtils.sha256Hex(UUID.randomUUID().toString());
+    if (nodeImageAuthorizor == null) {
+      return key;
+    }
+    nodeImageAuthorizor.authorize(authorization, authorizationDate);
+    authorizedKeys.put(key, new CachedResult<String>(key, receiptMaxAgeSeconds, TimeUnit.SECONDS));
+    return key;
+  }
+
+  @Override
   public SolarNodeImageReceipt createImage(String key, SolarNodeImage sourceImage,
       Iterable<SolarNodeImageResource> resources, SolarNodeImageOptions options)
       throws IOException {
+    // validate key is authorized, as long as an Authorizor is configured
+    if (nodeImageAuthorizor != null && !authorizedKeys.containsKey(key)) {
+      throw new RuntimeException("Key is not authorized");
+    }
+
     final String receiptId = UUID.randomUUID().toString();
     final String taskId = taskId(receiptId, key);
     final Path root = Files.createTempDirectory(stagingDir, "node-image-");
@@ -267,6 +289,14 @@ public abstract class AbstractNodeImageService implements NodeImageService {
         removed++;
       }
     }
+
+    // also remove expired keys
+    for (Iterator<CachedResult<String>> itr = authorizedKeys.values().iterator(); itr.hasNext();) {
+      CachedResult<String> key = itr.next();
+      if (!key.isValid()) {
+        itr.remove();
+      }
+    }
     return removed;
   }
 
@@ -346,6 +376,16 @@ public abstract class AbstractNodeImageService implements NodeImageService {
    */
   public void setNodeImageRepository(UpdatableNodeImageRepository nodeImageRepository) {
     this.nodeImageRepository = nodeImageRepository;
+  }
+
+  /**
+   * Set the NodeImageAuthorizor to use.
+   * 
+   * @param nodeImageAuthorizor
+   *          the service to use; if not configured, authorization will not be required
+   */
+  public void setNodeImageAuthorizor(NodeImageAuthorizor nodeImageAuthorizor) {
+    this.nodeImageAuthorizor = nodeImageAuthorizor;
   }
 
 }

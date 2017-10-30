@@ -1,5 +1,5 @@
 /* ==================================================================
- * NodeImageServiceConfig.java - 19/10/2017 11:34:44 AM
+ * SolarNetworkNodeImageAuthorizorConfig.java - 30/10/2017 3:53:26 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,36 @@
 
 package net.solarnetwork.nim.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.annotation.Profile;
 
-import net.solarnetwork.nim.service.NodeImageAuthorizor;
-import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
-import net.solarnetwork.nim.service.impl.GuestfsNodeImageService;
+import net.solarnetwork.nim.service.impl.SolarNetworkNodeImageAuthorizor;
 
 /**
- * Configuration for the node image service.
+ * SolarNetwork client configuration.
  * 
  * @author matt
  * @version 1.0
  */
 @Configuration
-public class NodeImageServiceConfig {
+@Profile("snauth")
+public class SolarNetworkNodeImageAuthorizorConfig {
 
-  @Autowired
-  @Qualifier("dest")
-  private UpdatableNodeImageRepository destRepository;
-
-  @Autowired(required = false)
-  private NodeImageAuthorizor authorizor;
+  @Value("${solarnet.baseUrl:https://data.solarnetwork.net}")
+  private String solarNetBaseUrl = "https://data.solarnetwork.net";
 
   /**
-   * Get the node image service.
+   * Get the NodeImageAuthorizor bean.
    * 
-   * @return the node image service
+   * @return the client
    */
   @Bean
-  public GuestfsNodeImageService nodeImageService() {
-    GuestfsNodeImageService nis = new GuestfsNodeImageService();
-    nis.setNodeImageRepository(destRepository);
-    nis.setNodeImageAuthorizor(authorizor);
-    return nis;
-  }
-
-  @Scheduled(fixedDelay = 60 * 60 * 1000L, initialDelay = 60 * 60 * 1000L)
-  public void nodeImageServiceRemoveExpiredReceipts() {
-    nodeImageService().cleanExpiredReceipts();
+  public SolarNetworkNodeImageAuthorizor solarNetworkNodeImageAuthorizor() {
+    SolarNetworkNodeImageAuthorizor client = new SolarNetworkNodeImageAuthorizor();
+    client.setApiBaseUrl(solarNetBaseUrl);
+    return client;
   }
 
 }

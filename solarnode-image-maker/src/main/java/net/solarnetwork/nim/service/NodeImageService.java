@@ -23,6 +23,7 @@
 package net.solarnetwork.nim.service;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 import net.solarnetwork.nim.domain.SolarNodeImage;
@@ -37,6 +38,22 @@ import net.solarnetwork.nim.domain.SolarNodeImageResource;
  * @version 1.0
  */
 public interface NodeImageService {
+
+  /**
+   * Authorize a user to create a image.
+   * 
+   * <p>
+   * This method can be used to authorize a SolarUser user based on a pre-signed authorization
+   * header for the {@code /solaruser/api/v1/sec/whoami} endpoint.
+   * </p>
+   * 
+   * @param authorization
+   *          a pre-signed header for the {@code /whoami} endpoint
+   * @param authorizationDate
+   *          the date for the authorization
+   * @return a key to use for subsequent calls to other methods in this API
+   */
+  String authorize(String authorization, Date authorizationDate);
 
   /**
    * Create a new image using a base {@link SolarNodeImage} as a starting point, applying a set of

@@ -24,6 +24,7 @@ package net.solarnetwork.nim.web;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -102,6 +104,14 @@ public class NodeImageController {
     List<SolarNodeImageInfo> result = StreamSupport.stream(iterable.spliterator(), false)
         .collect(Collectors.toList());
     return Response.response(result);
+  }
+
+  @PostMapping("/authorize")
+  public Response<String> authorize(
+      @RequestHeader("X-SN-PreSignedAuthorization") String authorization,
+      @RequestHeader("X-SN-Date") Date authorizationDate) {
+    String key = nodeImageService.authorize(authorization, authorizationDate);
+    return Response.response(key);
   }
 
   /**
