@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.InputStreamResource;
@@ -40,12 +42,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity.BodyBuilder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,6 +58,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.swagger.annotations.ApiOperation;
+import net.solarnetwork.nim.AuthorizationException;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImageOptions;
@@ -95,6 +100,31 @@ public class NodeImageController {
     super();
     this.nodeImageRepo = nodeImageRepo;
     this.nodeImageService = nodeImageService;
+  }
+
+  /**
+   * Handle {@link AuthorizationException} by returning a HTTP {@literal 403} response object.
+   * 
+   * <p>
+   * The resulting {@code success} will be set to {@literal false} and {@code code} will be set to
+   * the string {@literal 403}.
+   * </p>
+   * 
+   * @param e
+   *          the uncaught exception
+   * @param response
+   *          the active HTTP response
+   * @return the response object
+   * @throws IOException
+   *           if an IO error occurs
+   */
+  @ExceptionHandler(AuthorizationException.class)
+  @ResponseBody
+  public Response<Object> handleAuthorizationException(AuthorizationException e,
+      HttpServletResponse response) throws IOException {
+    response.setStatus(HttpStatus.FORBIDDEN.value());
+    return new Response<>(Boolean.FALSE, String.valueOf(HttpStatus.FORBIDDEN.value()),
+        e.getMessage(), null);
   }
 
   @GetMapping("/infos")

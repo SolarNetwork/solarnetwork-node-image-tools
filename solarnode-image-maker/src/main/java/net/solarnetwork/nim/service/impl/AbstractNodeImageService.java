@@ -56,6 +56,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 
+import net.solarnetwork.nim.AuthorizationException;
 import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.ResourceSolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImage;
@@ -154,7 +155,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
       throws IOException {
     // validate key is authorized, as long as an Authorizor is configured
     if (nodeImageAuthorizor != null && !authorizedKeys.containsKey(key)) {
-      throw new RuntimeException("Key is not authorized");
+      throw new AuthorizationException("Key is not authorized");
     }
 
     final String receiptId = UUID.randomUUID().toString();
@@ -259,6 +260,10 @@ public abstract class AbstractNodeImageService implements NodeImageService {
 
   @Override
   public SolarNodeImageReceipt getReceipt(String key, String id) {
+    // validate key is authorized, as long as an Authorizor is configured
+    if (nodeImageAuthorizor != null && !authorizedKeys.containsKey(key)) {
+      throw new AuthorizationException("Key is not authorized");
+    }
     String taskId = taskId(id, key);
     return receipts.get(taskId);
   }
