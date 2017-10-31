@@ -22,14 +22,18 @@
 
 package net.solarnetwork.nim.web;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.ApiOperation;
+import net.solarnetwork.nim.service.NodeImageService;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -42,12 +46,19 @@ import net.solarnetwork.web.domain.Response;
 @RequestMapping(path = "/api/v1", method = RequestMethod.GET)
 public class PingController {
 
+  @Autowired
+  private Collection<NodeImageService> imageServices = Collections.emptyList();
+
   @RequestMapping("/ping")
   @ApiOperation(value = "", notes = "Validate the server's health. The health can be "
       + "considered good if the response data contains an `allGood` key with " + "a `true` value.")
   public Response<Map<String, ?>> ping() {
     Map<String, Object> data = new LinkedHashMap<>();
     data.put("allGood", true);
+
+    int activeSessionCount = imageServices.stream().mapToInt(s -> s.activeSessionCount()).sum();
+    data.put("activeSessionCount", activeSessionCount);
+
     return Response.response(data);
   }
 

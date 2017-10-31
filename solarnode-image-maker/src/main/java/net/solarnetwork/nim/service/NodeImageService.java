@@ -92,4 +92,17 @@ public interface NodeImageService {
    */
   SolarNodeImageReceipt getReceipt(String key, String id);
 
+  /**
+   * Get a count of active sessions.
+   * 
+   * <p>
+   * A "session" represents an image creation task, or authorization for a task. The returned count
+   * should return {@literal 0} only if the service is not performing any task and does not have any
+   * recently authorized keys.
+   * </p>
+   * 
+   * @return the count of active sessions
+   */
+  int activeSessionCount();
+
 }

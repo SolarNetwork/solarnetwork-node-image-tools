@@ -139,6 +139,11 @@ public abstract class AbstractNodeImageService implements NodeImageService {
   }
 
   @Override
+  public int activeSessionCount() {
+    return authorizedKeys.keySet().size();
+  }
+
+  @Override
   public String authorize(String authorization, Date authorizationDate) {
     String key = DigestUtils.sha256Hex(UUID.randomUUID().toString());
     if (nodeImageAuthorizor == null) {
