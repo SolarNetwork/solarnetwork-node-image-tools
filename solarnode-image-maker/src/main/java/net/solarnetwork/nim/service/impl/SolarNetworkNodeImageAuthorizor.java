@@ -103,6 +103,8 @@ public class SolarNetworkNodeImageAuthorizor extends HttpClientSupport
     headers.setDate(signedDateHeaderName(authorization), authorizationDate.getTime());
     headers.set(HttpHeaders.AUTHORIZATION, authorization);
 
+    log.info("Authorizing against {} with {}", uri, headers);
+
     try {
       URLConnection conn = get(uri, MediaType.APPLICATION_JSON_UTF8_VALUE, headers);
       JsonNode node = MAPPER.readTree(getInputStreamFromURLConnection(conn));
