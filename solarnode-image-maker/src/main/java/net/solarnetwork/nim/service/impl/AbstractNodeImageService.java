@@ -159,8 +159,11 @@ public abstract class AbstractNodeImageService implements NodeImageService {
       Iterable<SolarNodeImageResource> resources, SolarNodeImageOptions options)
       throws IOException {
     // validate key is authorized, as long as an Authorizor is configured
-    if (nodeImageAuthorizor != null && !authorizedKeys.containsKey(key)) {
+    if (key == null || (nodeImageAuthorizor != null && !authorizedKeys.containsKey(key))) {
       throw new AuthorizationException("Key is not authorized");
+    }
+    if (sourceImage == null) {
+      throw new IllegalArgumentException("No source image provided.");
     }
 
     final String receiptId = UUID.randomUUID().toString();
