@@ -45,6 +45,20 @@ This script, and the `os-files.txz` referenced by it, would be passed to the app
 a `POST` request to the [/api/v1/images/create/`{baseImageId}`/`{key}`](#rest-api) endpoint
 described later in this document.
 
+## First boot scripts
+
+Scripts can be installed that will be executed when the OS boots up for the first time.
+The scripts can do whatever you like, such as install packages. Simply name any scripts
+you'd like to run at first boot with a `.firstboot` extension and include them when
+you [execute the image customization process](#start-custom-image-task). For example:
+
+```
+#!/usr/bin/env sh
+
+apt-get -qq update
+apt-get -qq install vim-nox
+```
+
 
 # Building
 
@@ -307,7 +321,9 @@ This endpoint accepts `multipart/form-data` content of multiple file attachments
 You can include any number of `dataFile` parts for the custom data you will
 be customizing the base image with. At least one `dataFile` part for a `*.fish`
 file is required: this is the `guestfish` script that will be Customizing
-the image for you.
+the image for you. Any number of `*.firstboot` files can be included and they
+will be installed into the image so they are executed the first time the OS
+boots up.
 
 This endpoint also accepts a `options` file attachment that is a JSON document
 with various options that control the customization task.
