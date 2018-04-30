@@ -40,7 +40,7 @@ import net.solarnetwork.nim.util.TaskStepTracker;
  * {@link NodeImageService} using libguestfs.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GuestfsNodeImageService extends AbstractNodeImageService {
 
@@ -50,11 +50,17 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
   public static final String SCRIPT_RESOURCE_NAME_EXTENSION = ".fish";
 
   /**
+   * The name of a resource that holds a script to install that runs on first boot of the OS.
+   */
+  public static final String FIRSTBOOT_RESOURCE_NAME_EXTENSION = ".firstboot";
+
+  /**
    * An options parameter key for the {@literal --format} value; defaults to {@literal raw}.
    */
   public static final String OPTIONS_PARAM_IMAGE_FORMAT = "format";
 
   private String guestfishBin = "guestfish";
+  private String virtCustomizeBin = "virt-customize";
   private NodeImageScriptValidator scriptValidator = new GuestfishScriptSanitizer();
 
   @Override
@@ -84,6 +90,9 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
       throw new IOException(
           "guestfish command returned non-zero exit code " + proc.exitValue() + ": " + output);
     }
+
+    installFirstbootScript(workingDir, imageFile, resources, options);
+
     return new ImageSetupResult(imageFile, output.toString(), true);
   }
 
@@ -134,6 +143,85 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
     return pb;
   }
 
+  private void installFirstbootScript(Path workingDir, Path imageFile, List<Path> resources,
+      SolarNodeImageOptions options) throws IOException {
+    ProcessBuilder pb = setupVirtCustomizerProcess(workingDir, imageFile, resources, options);
+    if (pb == null) {
+      // nothing for first boot
+      return;
+    }
+    Process proc = pb.start();
+    StringBuilder output = new StringBuilder();
+    try (BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {
+      String line = null;
+      while ((line = in.readLine()) != null) {
+        if (output.length() > 0) {
+          output.append('\n');
+        }
+        output.append(line);
+      }
+    }
+    try {
+      proc.waitFor();
+    } catch (InterruptedException e) {
+      log.warn("Interrupted waiting for guestfish command to complete");
+    }
+    if (proc.exitValue() != 0) {
+      log.error("{} command returned non-zero exit code {}: {}", virtCustomizeBin, proc.exitValue(),
+          output);
+      throw new IOException(virtCustomizeBin + " command returned non-zero exit code "
+          + proc.exitValue() + ": " + output);
+    }
+  }
+
+  private ProcessBuilder setupVirtCustomizerProcess(Path workingDir, Path imageFile,
+      List<Path> resources, SolarNodeImageOptions options) {
+    List<String> cmd = new ArrayList<>(8);
+    cmd.add(virtCustomizeBin);
+
+    Object format = null;
+    if (options != null) {
+      format = options.getParameterValue("format");
+    }
+    if (format == null) {
+      format = "raw";
+    }
+    cmd.add("--format=" + format);
+
+    cmd.add("-a");
+    cmd.add(imageFile.getFileName().toString()); // assumed to be in working dir
+
+    if (options != null && options.isVerbose()) {
+      cmd.add("--verbose");
+    }
+
+    List<Path> firstBootFiles = resources.stream()
+        .filter(p -> p.getFileName().toString().endsWith(FIRSTBOOT_RESOURCE_NAME_EXTENSION))
+        .collect(Collectors.toList());
+    if (firstBootFiles.isEmpty()) {
+      return null;
+    }
+    for (Path fbScript : firstBootFiles) {
+      cmd.add("--firstboot");
+      cmd.add(fbScript.getFileName().toString());
+    }
+
+    ProcessBuilder pb = new ProcessBuilder(cmd);
+    pb.directory(workingDir.toFile());
+
+    if (options != null && options.getEnvironment() != null) {
+      pb.environment().putAll(options.getEnvironment());
+    }
+
+    log.info("Executing command {}", cmd.stream().collect(Collectors.joining(" ")));
+
+    pb.redirectErrorStream(true);
+
+    pb.command(cmd);
+
+    return pb;
+  }
+
   /**
    * Set the {@literal guestfish} command to use.
    * 
@@ -157,6 +245,23 @@ public class GuestfsNodeImageService extends AbstractNodeImageService {
    */
   public void setScriptValidator(NodeImageScriptValidator scriptValidator) {
     this.scriptValidator = scriptValidator;
+  }
+
+  /**
+   * Set the {@literal virt-customize} command to use.
+   * 
+   * <p>
+   * If {@literal virt-customize} is not available in the default process path, this should be
+   * configured as the full path to the executable, for example
+   * {@literal /usr/local/bin/virt-customize}.
+   * </p>
+   * 
+   * @param virtCustomizeBin
+   *          the {@literal virt-customize} command to use; defaults to {@literal virt-customize}
+   * @since 1.1
+   */
+  public void setVirtCustomizeBin(String virtCustomizeBin) {
+    this.virtCustomizeBin = virtCustomizeBin;
   }
 
 }
