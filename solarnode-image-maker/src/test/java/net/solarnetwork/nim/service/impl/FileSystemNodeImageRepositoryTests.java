@@ -61,12 +61,14 @@ public class FileSystemNodeImageRepositoryTests {
     repo = new FileSystemNodeImageRepository(root);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void listAll() {
     Iterable<SolarNodeImageInfo> result = repo.findAll();
     assertThat("Never null", result, notNullValue());
     assertThat("Image list", result,
-        contains(pojo(SolarNodeImageInfo.class).withProperty("id", is("foobar"))));
+        contains(pojo(SolarNodeImageInfo.class).withProperty("id", is("foobar")),
+            pojo(SolarNodeImageInfo.class).withProperty("id", is("zebra"))));
   }
 
   @Test

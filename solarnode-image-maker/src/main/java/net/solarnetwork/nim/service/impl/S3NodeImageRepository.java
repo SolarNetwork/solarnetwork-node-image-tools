@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -58,6 +59,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.domain.SolarNodeImageInfoSortById;
 import net.solarnetwork.nim.service.DataStreamCache;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
@@ -148,6 +150,7 @@ public class S3NodeImageRepository extends AbstractNodeImageRepository
       req.setContinuationToken(listResult.getNextContinuationToken());
     } while (listResult.isTruncated() == true);
 
+    Collections.sort(result, SolarNodeImageInfoSortById.SORT_BY_ID);
     return result;
   }
 

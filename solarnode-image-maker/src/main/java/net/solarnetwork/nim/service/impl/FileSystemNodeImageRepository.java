@@ -46,6 +46,7 @@ import net.solarnetwork.nim.domain.BasicSolarNodeImageInfo;
 import net.solarnetwork.nim.domain.ResourceSolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImage;
 import net.solarnetwork.nim.domain.SolarNodeImageInfo;
+import net.solarnetwork.nim.domain.SolarNodeImageInfoSortById;
 import net.solarnetwork.nim.service.NodeImageRepository;
 import net.solarnetwork.nim.service.UpdatableNodeImageRepository;
 import net.solarnetwork.nim.util.MaxCompressorStreamFactory;
@@ -93,7 +94,7 @@ public class FileSystemNodeImageRepository extends AbstractNodeImageRepository
   public Iterable<SolarNodeImageInfo> findAll() {
     try {
       return infoFileStream().map(FileSystemNodeImageRepository::infoFromJsonFile)
-          .collect(Collectors.toList());
+          .sorted(SolarNodeImageInfoSortById.SORT_BY_ID).collect(Collectors.toList());
     } catch (IOException e) {
       throw new RuntimeException("Error listing node image infos: " + e.getMessage(), e);
     }
