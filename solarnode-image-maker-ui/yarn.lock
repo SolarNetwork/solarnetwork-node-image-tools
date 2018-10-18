@@ -5720,7 +5720,7 @@ solarnetwork-api-core@0.14:
 
 solarnetwork-api-nim@solarnetwork/sn-api-nim-js#develop:
   version "0.1.0-dev.0"
-  resolved "https://codeload.github.com/solarnetwork/sn-api-nim-js/tar.gz/9d4e296aa92033309faf2023b9a374e792935ead"
+  resolved "https://codeload.github.com/solarnetwork/sn-api-nim-js/tar.gz/744ce77b996b71da6d7f9145ffbb3672d008756f"
   dependencies:
     solarnetwork-api-core "0.13"
 

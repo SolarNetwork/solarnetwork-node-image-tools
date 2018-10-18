@@ -9,7 +9,7 @@ import {
   UserUrlHelperMixin
 } from "solarnetwork-api-core";
 import { NimUrlHelper, SolarNodeImageGroup, SolarNodeImageInfo } from "solarnetwork-api-nim";
-import { select, selectAll } from "d3-selection";
+import { event as d3event, select, selectAll } from "d3-selection";
 import { json as jsonRequest } from "d3-request";
 import dialogPolyfill from "dialog-polyfill";
 
@@ -49,8 +49,12 @@ function executeWithSignedAuthorization(method, url, auth) {
   return req;
 }
 
-function executeWithPreSignedAuthorization(method, url, auth) {
-  auth.snDate(true).date(new Date());
+function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUrl) {
+  auth
+    .snDate(true)
+    .date(new Date())
+    .method(signMethod)
+    .url(signUrl);
   var req = jsonRequest(url);
   req.on("beforesend", function(request) {
     request.setRequestHeader("X-SN-Date", auth.requestDateHeaderValue);
@@ -68,33 +72,68 @@ function executeWithPreSignedAuthorization(method, url, auth) {
  * @param {NimUrlHelper} nimUrlHelper the URL helper with the `NimUrlHelperMixin` for accessing NIM with
  * @param {UserUrlHelper} [snUrlHelper] the URL helper with the `UserUrlHelperMixin` for accessing SolarNetwork with
  * @param {Object} [options] optional configuration options
+ * @param {boolean} [options.solarNetworkAuthorization] `true` to authorize via SolarNetwork, `false` to authorize via NIM directly
  */
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   var self = { version: "0.1.0" };
-  var config = options || {};
+  var config = options || {
+    solarNetworkAuthorization: false
+  };
+
+  /**
+   * Toggle a `hidden` class on a set of elements who have either a `success` or `error` class to match the result of performing some action.
+   *
+   * @param {string} action the name of the action that was performed, which must match the CSS class name to manipulate
+   * @param {boolean} success `true` if the result was successful
+   */
+  function toggleResultHidden(action, success) {
+    const sel = `.${action}.result`;
+    selectAll(sel).classed("hidden", function() {
+      return !this.classList.contains(success ? "success" : "error");
+    });
+  }
 
   function authorize() {
-    // if snUrlHelper is available, authorize via there, so that NIM wakes up if it is sleeping
-    if (snUrlHelper) {
-      const authUrl = snUrlHelper.nimAuthorizeUrl();
-      const tokenId = select("input[name=token]").property("value");
-      const authBuilder = new AuthorizationV2Builder(tokenId, snUrlHelper);
-      authBuilder.saveSigningKey(select("input[name=secret]").property("value"));
-      executeWithSignedAuthorization("GET", authUrl, authBuilder)
-        .on("load", json => {
-          if (!(json.success && json.data)) {
-            console.error("Failed to authorize session: %s", JSON.stringify(json));
-            return;
-          }
-        })
-        .on("error", function(xhr) {
-          if (xhr.target) {
-            xhr = xhr.target;
-          }
-          console.error("Failed to authorize session: %s %s", xhr.status, xhr.responseText);
-        });
+    const tokenId = select("input[name=token]").property("value");
+    const authBuilder = new AuthorizationV2Builder(tokenId, snUrlHelper);
+    authBuilder.saveSigningKey(select("input[name=secret]").property("value"));
+
+    if (config.solarNetworkAuthorization) {
+      // get authorized session key from SN
+      executeWithSignedAuthorization("GET", snUrlHelper.nimAuthorizeUrl(), authBuilder)
+        .on("load", authorizeSuccess)
+        .on("error", authorizeError);
     } else {
-      // TODO
+      // get authorized session key from NIM, passing a pre-signed SN URL to the /whoami endpoint
+      executeWithPreSignedAuthorization(
+        "POST",
+        nimUrlHelper.authorizeImageSessionUrl(),
+        authBuilder,
+        "GET",
+        snUrlHelper.whoamiUrl()
+      )
+        .on("load", authorizeSuccess)
+        .on("error", authorizeError);
+    }
+
+    function authorizeSuccess(json) {
+      if (!(json.success && json.data)) {
+        console.error("Failed to authorize session: %s", JSON.stringify(json));
+        return;
+      }
+      console.info("Got image authorization session key: %s", json.data);
+      toggleResultHidden("auth", true);
+
+      // stash session key onto the NIM UrlHelper
+      nimUrlHelper.nimSessionKey = json.data;
+    }
+
+    function authorizeError(xhr) {
+      if (xhr.target) {
+        xhr = xhr.target;
+      }
+      console.error("Failed to authorize session: %s %s", xhr.status, xhr.responseText);
+      toggleResultHidden("auth", false);
     }
   }
 
@@ -109,8 +148,21 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   }
 
   function init() {
-    select("#connect").on("click", authorize);
-    select("#end").on("click", stop);
+    select("#authorize").on("click", authorize);
+    selectAll("input.auth").on("keyup", function() {
+      const event = d3event;
+      if (event.defaultPrevented) {
+        return;
+      }
+      switch (event.key) {
+        case "Enter":
+          authorize();
+          break;
+
+        default:
+          return;
+      }
+    });
     return Object.defineProperties(self, {
       // property getter/setter functions
 
@@ -126,16 +178,10 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   return init();
 };
 
-function setupUI(env) {
-  // TODO
-}
-
 export default function startApp() {
   var config = new Configuration(
     Object.assign({ nodeId: 251 }, urlQuery.urlQueryParse(window.location.search))
   );
-
-  setupUI(config);
 
   var snUrlHelper = new UserUrlHelper(snEnv);
 

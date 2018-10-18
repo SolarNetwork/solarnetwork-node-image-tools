@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="standalone">
+
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=570">
@@ -9,15 +10,16 @@
 	<link type="text/css" rel="stylesheet" href="css/dialog-polyfill.css">
 	<link type="text/css" rel="stylesheet" href="css/nim.css">
 </head>
+
 <body>
 	<header class="hboxrow">
 		<h1>SolarNode Image Maker</h1>
-		<input type="text" name="token" placeholder="Token" value=""
-			autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-		<input type="password" name="secret" placeholder="Secret" value="">
-		<button type="button" id="connect">Connect</button>
-		<button type="button" id="setup-gui" disabled>Setup</button>
-		<button type="button" class="destructive" id="end" disabled>End</button>
+		<i class="fas fa-check-circle fa-2x auth result success hidden" title="Authorization successful"></i>
+		<i class="fas fa-times-circle fa-2x auth result error hidden" title="Authorization failed"></i>
+		<input type="text" class="auth" name="token" placeholder="Token" value="" autocomplete="off" autocorrect="off"
+		 autocapitalize="off" spellcheck="false">
+		<input type="password" class="auth" name="secret" placeholder="Secret" value="">
+		<button type="button" id="authorize">Authorize</button>
 	</header>
 	<section>
 		<i class="fas fa-plus-circle"></i>
@@ -26,4 +28,5 @@
 		<p>Powered by <a href="https://solarnetwork.github.io/">SolarNetwork</a>.</p>
 	</footer>
 </body>
+
 </html>
