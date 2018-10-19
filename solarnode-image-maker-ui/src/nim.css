@@ -38,6 +38,17 @@ h1 {
   flex-grow: 1;
 }
 
+h2 {
+  margin: 0.2rem 0;
+  font-size: 1.4em;
+}
+
+h3 {
+  margin: 1.5rem 0 0;
+  font-size: 1.2em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
 a {
   color: #bee6f0;
   text-decoration: none;
@@ -66,6 +77,10 @@ dialog > form > p {
   font-family: inherit;
   font-weight: 500;
   margin: 0 0 1em 0;
+}
+
+p {
+  margin: 0.5rem 0;
 }
 
 .hboxrow {
@@ -100,7 +115,8 @@ dialog + .backdrop {
   display: none;
 }
 
-input {
+input[type="text"],
+input[type="password"] {
   border: none;
   border-bottom: 2px solid #666;
   background: none;
@@ -109,6 +125,12 @@ input {
   font-size: 1rem;
   color: #fce94f;
   width: 10em;
+}
+
+input[type="file"] {
+  min-height: 32px;
+  font-size: 1rem;
+  color: #fce94f;
 }
 
 input:focus {
@@ -164,17 +186,68 @@ main {
   color: white;
 }
 
-main.hboxrow > * + * {
-  margin-left: 24px;
+main > section {
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-bottom: 6px;
+}
+
+main > section > h2 {
+  margin-top: 0;
 }
 
 section.disabled {
   color: #999;
 }
 
+section.choose-base {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+section.prepare {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+section.submit {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
 .base-item-list li.item {
   color: #fce94f;
   cursor: pointer;
+}
+
+.disabled .active-image-name::before {
+  content: none;
+}
+
+.active-image-name::before {
+  content: ": ";
+}
+
+pre.example {
+  margin-left: 24px;
+  margin-right: 24px;
+  padding: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  color: black;
+}
+
+table.env {
+  border-collapse: collapse;
+  min-width: 50%;
+}
+
+table.env th,
+table.env td {
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+table.env td {
+  color: #fce94f;
 }
 
 /* Collapsing lists */

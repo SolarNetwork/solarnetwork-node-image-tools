@@ -6,7 +6,8 @@ import {
   Configuration,
   urlQuery,
   UrlHelper,
-  UserUrlHelperMixin
+  UserUrlHelperMixin,
+  SortDescriptor
 } from "solarnetwork-api-core";
 import { NimUrlHelper, SolarNodeImageGroup, SolarNodeImageInfo } from "solarnetwork-api-nim";
 import { event as d3event, select, selectAll } from "d3-selection";
@@ -84,8 +85,14 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     solarNetworkAuthorization: false
   };
 
+  /** @type {SolarNodeImageInfo[]} */
+  var images = [];
+
   /** @type {SolarNodeImageGroup[]} */
   var imageGroups = [];
+
+  /** @type {SolarNodeImageInfo} */
+  var activeImage = undefined;
 
   /**
    * Toggle a `hidden` class on a set of elements who have either a `success` or `error` class to match the result of performing some action.
@@ -155,7 +162,9 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
         console.error("Failed to list base images: %s", JSON.stringify(json));
         return;
       }
-      const images = json.data.map(d => SolarNodeImageInfo.fromJsonEncoding(d));
+      images = json.data.map(d => SolarNodeImageInfo.fromJsonEncoding(d));
+      images.sort(SolarNodeImageInfo.compareById);
+
       imageGroups = SolarNodeImageInfo.idComponentGroups(images);
       renderImageGroups();
     }
@@ -166,9 +175,35 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
   }
 
+  /**
+   * Find an available base image based on its ID value.
+   *
+   * This searches the images previously discovered via `listBaseImages()`.
+   *
+   * @param {string} id the image ID to look for
+   * @return {SolarNodeImageInfo} the found image, or `undefined` if not found
+   */
+  function baseImageForId(id) {
+    return images.find(function(d) {
+      return d.hasId(id);
+    });
+  }
+
+  /**
+   * Select an image to work with.
+   *
+   * @param {SolarNodeImageInfo} image the image to work with
+   */
+  function chooseBaseImage(image) {
+    console.info("Selected base image %s", image.id);
+    activeImage = image;
+    selectAll(".active-image-name").text(image.id);
+    select("section.prepare").classed("disabled", false);
+  }
+
   function handleBaseImageListClick() {
     const event = d3event;
-    const target = event.target;
+    var target = event.target;
     while (target && target.nodeName !== "LI") {
       target = target.parentNode;
     }
@@ -176,13 +211,12 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     if (target && target.classList.contains("item")) {
       const imageId = target.dataset[DATA_IMAGE_ID];
       if (imageId) {
-        console.info("Click on base image %s", imageId);
+        const image = baseImageForId(imageId);
+        if (image) {
+          chooseBaseImage(image);
+        }
       }
     }
-  }
-
-  function displayNameForGroupedImageInfo(imageInfo) {
-    const id = imageInfo.id;
   }
 
   function renderImageGroups() {
@@ -263,7 +297,8 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
           // create item name
           itemEl.appendChild(document.createTextNode(item.displayNameForComponent()));
 
-          itemsEl.appendChild(itemEl);
+          // note we insert in reverse order, assuming the component name is a date so most recent first
+          itemsEl.insertBefore(itemEl, itemsEl.firstChild);
         });
 
         groupEl.appendChild(itemsEl);

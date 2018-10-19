@@ -22,37 +22,56 @@
 		<button type="button" id="authorize">Authorize</button>
 	</header>
 	<main class="hboxrow">
-		<section>
+		<section class="choose-base">
 			<h2>Ready</h2>
 			<p>Choose the base OS image you'd like to customize.</p>
 			<div id="base-image-listing"></div>
 		</section>
-		<section class="disabled">
-			<h2>Steady</h2>
+		<section class="prepare disabled">
+			<h2>Steady <span class="active-image-name"></span></h2>
 			<p>Select the items you'd like to customize.</p>
+			<form enctype="multipart/form-data">
+				<h3>Guestfish script</h3>
+				<p>A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required
+					to perform the customization. This file must be named with a <code>.fish</code>
+					extension.</p>
+				<input type="file" name="dataFile" accept="*.fish" required>
+
+				<h3>Environment variables</h3>
+				<p>You can configure any number of environment variables to pass to the <code>guestfish</code>
+					script.</p>
+				<table class="env">
+					<thead>
+						<tr>
+							<th>Variable</th>
+							<th>Value</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td contenteditable="true"></td>
+							<td contenteditable="true"></td>
+						</tr>
+					</tbody>
+				</table>
+
+				<h3>Firstboot scripts</h3>
+				<p>You can <b>optionally</b> provide any number of shell scripts that will be executed
+					the first time the OS boots up, as the <code>root</code> user. These files must be named with a <code>.firstboot</code>
+					extension. Here's an example script that updates the <code>apt</code> package cache
+					and installs all available updates:</p>
+				<pre class="example">#!/usr/bin/env sh
+apt-get -qq update
+apt-get -qq upgrade
+apt-get -qq clean</pre>
+				<input type="file" name="dataFile" accept="*.firstboot">
+				<i class="fas fa-plus-circle"></i>
+			</form>
 		</section>
-		<section class="disabled">
+		<section class="submit disabled">
 			<h2>Go!</h2>
+			<p>Once you're satisifed with your care, hit the <b>Press Me</b> button to submit your request.</p>
 		</section>
-		<i class="fas fa-plus-circle"></i>
-		<br>
-		<ul class="collapsibleList fa-ul">
-			<li>
-				<span class="fa-li closed"><i class="fas fa-plus-square"></i></span>
-				<span class="fa-li open"><i class="fas fa-minus-square"></i></span>
-				Group 1
-				<ul class="fa-ul">
-					<li>
-						<span class="fa-li"><i class="fas fa-hdd"></i></span>
-						One
-					</li>
-					<li>
-						<span class="fa-li"><i class="fas fa-hdd"></i></span>
-						Two
-					</li>
-				</ul>
-			</li>
-		</ul>
 	</main>
 	<footer>
 		<p>Powered by <a href="https://solarnetwork.github.io/">SolarNetwork</a>.</p>
