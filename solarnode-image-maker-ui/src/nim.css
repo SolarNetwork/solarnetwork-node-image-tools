@@ -77,8 +77,10 @@ dialog > form > p {
   padding: 0;
 }
 
-.hboxrow > svg {
+.hboxrow svg {
   align-self: center;
+  margin-left: 4px;
+  margin-right: 4px;
 }
 
 dialog .hboxrow > input {
@@ -158,7 +160,33 @@ svg.error {
   fill: #8a1f1f;
 }
 
-.hboxrow svg {
-  margin-left: 2px;
-  margin-right: 4px;
+main {
+  color: white;
+}
+
+main.hboxrow > * + * {
+  margin-left: 24px;
+}
+
+section.disabled {
+  color: #999;
+}
+
+.base-item-list li.item {
+  color: #fce94f;
+  cursor: pointer;
+}
+
+/* Collapsing lists */
+
+.collapsibleList li {
+  cursor: auto;
+}
+
+li.collapsibleListOpen {
+  cursor: pointer;
+}
+
+li.collapsibleListClosed {
+  cursor: pointer;
 }

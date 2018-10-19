@@ -21,9 +21,39 @@
 		<input type="password" class="auth" name="secret" placeholder="Secret" value="">
 		<button type="button" id="authorize">Authorize</button>
 	</header>
-	<section>
+	<main class="hboxrow">
+		<section>
+			<h2>Ready</h2>
+			<p>Choose the base OS image you'd like to customize.</p>
+			<div id="base-image-listing"></div>
+		</section>
+		<section class="disabled">
+			<h2>Steady</h2>
+			<p>Select the items you'd like to customize.</p>
+		</section>
+		<section class="disabled">
+			<h2>Go!</h2>
+		</section>
 		<i class="fas fa-plus-circle"></i>
-	</section>
+		<br>
+		<ul class="collapsibleList fa-ul">
+			<li>
+				<span class="fa-li closed"><i class="fas fa-plus-square"></i></span>
+				<span class="fa-li open"><i class="fas fa-minus-square"></i></span>
+				Group 1
+				<ul class="fa-ul">
+					<li>
+						<span class="fa-li"><i class="fas fa-hdd"></i></span>
+						One
+					</li>
+					<li>
+						<span class="fa-li"><i class="fas fa-hdd"></i></span>
+						Two
+					</li>
+				</ul>
+			</li>
+		</ul>
+	</main>
 	<footer>
 		<p>Powered by <a href="https://solarnetwork.github.io/">SolarNetwork</a>.</p>
 	</footer>
