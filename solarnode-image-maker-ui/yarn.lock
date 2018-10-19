@@ -1970,16 +1970,16 @@ d3-selection@^1.1.0:
   integrity sha1-GZhoSJZIj4OcoDchI9o08dMYgJw=
 
 d3-time-format@^2.0.5:
-  version "2.0.5"
-  resolved "https://registry.yarnpkg.com/d3-time-format/-/d3-time-format-2.0.5.tgz#9d7780204f7c9119c9170b1a56db4de9a8af972e"
-  integrity sha1-nXeAIE98kRnJFwsaVttN6aivly4=
+  version "2.1.3"
+  resolved "https://registry.yarnpkg.com/d3-time-format/-/d3-time-format-2.1.3.tgz#ae06f8e0126a9d60d6364eac5b1533ae1bac826b"
+  integrity sha512-6k0a2rZryzGm5Ihx+aFMuO1GgelgIz+7HhB4PH4OEndD5q2zGn1mDfRdNrulspOfR6JXkb2sThhDK41CSK85QA==
   dependencies:
     d3-time "1"
 
 d3-time@1:
-  version "1.0.7"
-  resolved "https://registry.yarnpkg.com/d3-time/-/d3-time-1.0.7.tgz#94caf6edbb7879bb809d0d1f7572bc48482f7270"
-  integrity sha1-lMr27bt4ebuAnQ0fdXK8SEgvcnA=
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/d3-time/-/d3-time-1.0.10.tgz#8259dd71288d72eeacfd8de281c4bf5c7393053c"
+  integrity sha512-hF+NTLCaJHF/JqHN5hE8HVGAXPStEq6/omumPE/SxyHVrR7/qQxusFDo0t0c/44+sCGHthC7yNGFZIEgju0P8g==
 
 d@1:
   version "1.0.0"
@@ -5055,9 +5055,9 @@ punycode@^1.2.4, punycode@^1.4.1:
   integrity sha1-wNWmOycYgArY4esPpSachN1BhF4=
 
 punycode@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.0.tgz#5f863edc89b96db09074bad7947bf09056ca4e7d"
-  integrity sha1-X4Y+3Im5bbCQdLrXlHvwkFbKTn0=
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
+  integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
 qs@6.5.1:
   version "6.5.1"
@@ -5720,7 +5720,7 @@ solarnetwork-api-core@0.14:
 
 solarnetwork-api-nim@solarnetwork/sn-api-nim-js#develop:
   version "0.1.0-dev.0"
-  resolved "https://codeload.github.com/solarnetwork/sn-api-nim-js/tar.gz/744ce77b996b71da6d7f9145ffbb3672d008756f"
+  resolved "https://codeload.github.com/solarnetwork/sn-api-nim-js/tar.gz/c26a42c09f6dbe02c646b124a057c9f43ff184a2"
   dependencies:
     solarnetwork-api-core "0.13"
 
