@@ -309,6 +309,36 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
   }
 
+  function submit() {
+    // submit multipart form
+    const form = document.getElementById("nim-form");
+    const xhr = new XMLHttpRequest();
+    xhr.onload = submitSuccess;
+    xhr.open("POST");
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.send(new FormData(form));
+    oReq.upload.addEventListener("progress", submitProgress);
+
+    function submitSuccess() {
+      /** @type {XMLHttpRequest} */
+      const xhr = this;
+      var json = undefined;
+      console.info("Submitted image, got response: %s", xhr.responseText);
+      if (xhr.responseType === "json") {
+        json = xhr.response;
+      } else {
+        json = JSON.parse(xhr.responseText);
+      }
+    }
+
+    function submitProgress(event) {
+      if (event.lengthComputable) {
+        const percentComplete = (event.loaded / event.total) * 100;
+        console.info("Upload progress: %d%%", percentComplete);
+      }
+    }
+  }
+
   function start() {
     // TODO
     return this;
@@ -319,22 +349,46 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     return this;
   }
 
+  function handleAuthorizationInputKeyup() {
+    const event = d3event;
+    if (event.defaultPrevented) {
+      return;
+    }
+    switch (event.key) {
+      case "Enter":
+        authorize();
+        break;
+
+      default:
+        return;
+    }
+  }
+
+  function handleAddEnvVariable() {
+    const rowTemplate = document.getElementById("env-row-template");
+    const rowContainer = document.getElementById("env-row-container");
+    const newRow = rowTemplate.cloneNode(true);
+    newRow.classList.remove("hidden", "template");
+    newRow.removeAttribute("id");
+    rowContainer.appendChild(newRow);
+  }
+
+  function handleAddFirstbootClick() {
+    const addBtn = document.getElementById("add-firstboot");
+    const container = document.getElementById("firstboot-container");
+    const newInput = document.createElement("input");
+    newInput.setAttribute("type", "file");
+    newInput.setAttribute("name", "dataFile");
+    newInput.setAttribute("accept", "*.firstboot");
+    container.insertBefore(document.createElement("br"), addBtn);
+    container.insertBefore(newInput, addBtn);
+  }
+
   function init() {
     select("#authorize").on("click", authorize);
-    selectAll("input.auth").on("keyup", function() {
-      const event = d3event;
-      if (event.defaultPrevented) {
-        return;
-      }
-      switch (event.key) {
-        case "Enter":
-          authorize();
-          break;
-
-        default:
-          return;
-      }
-    });
+    selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
+    select("#add-environment-variable").on("click", handleAddEnvVariable);
+    select("#add-firstboot").on("click", handleAddFirstbootClick);
     return Object.defineProperties(self, {
       // property getter/setter functions
 

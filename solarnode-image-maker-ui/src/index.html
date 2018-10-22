@@ -30,7 +30,7 @@
 		<section class="prepare disabled">
 			<h2>Steady <span class="active-image-name"></span></h2>
 			<p>Select the items you'd like to customize.</p>
-			<form enctype="multipart/form-data">
+			<form id="nim-form" enctype="multipart/form-data">
 				<h3>Guestfish script</h3>
 				<p>A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required
 					to perform the customization. This file must be named with a <code>.fish</code>
@@ -40,20 +40,31 @@
 				<h3>Environment variables</h3>
 				<p>You can configure any number of environment variables to pass to the <code>guestfish</code>
 					script.</p>
-				<table class="env">
-					<thead>
-						<tr>
-							<th>Variable</th>
-							<th>Value</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td contenteditable="true"></td>
-							<td contenteditable="true"></td>
-						</tr>
-					</tbody>
-				</table>
+				<div class="hboxrow">
+					<table class="env">
+						<thead>
+							<tr>
+								<th>Variable</th>
+								<th>Value</th>
+							</tr>
+							<tr id="env-row-template" class="hidden template">
+								<td contenteditable="true"></td>
+								<td contenteditable="true"></td>
+							</tr>
+						</thead>
+						<tbody id="env-row-container">
+							<tr>
+								<td contenteditable="true"></td>
+								<td contenteditable="true"></td>
+							</tr>
+						</tbody>
+					</table>
+					<div class="valign-bottom">
+						<button id="add-environment-variable" class="btn icon-btn" type="button">
+							<i class="fas fa-plus-circle fa-lg"></i>
+						</button>
+					</div>
+				</div>
 
 				<h3>Firstboot scripts</h3>
 				<p>You can <b>optionally</b> provide any number of shell scripts that will be executed
@@ -64,8 +75,12 @@
 apt-get -qq update
 apt-get -qq upgrade
 apt-get -qq clean</pre>
-				<input type="file" name="dataFile" accept="*.firstboot">
-				<i class="fas fa-plus-circle"></i>
+				<div id="firstboot-container">
+					<input type="file" name="dataFile" accept="*.firstboot">
+					<button id="add-firstboot" class="btn icon-btn" type="button">
+						<i class="fas fa-plus-circle fa-lg"></i>
+					</button>
+				</div>
 			</form>
 		</section>
 		<section class="submit disabled">
