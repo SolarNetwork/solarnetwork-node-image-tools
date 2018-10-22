@@ -84,8 +84,8 @@ function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUr
  * @param {boolean} [options.solarNetworkAuthorization] `true` to authorize via SolarNetwork, `false` to authorize via NIM directly
  */
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
-  var self = { version: "0.1.0" };
-  var config = options || {
+  const self = { version: "0.1.0" };
+  const config = options || {
     solarNetworkAuthorization: false
   };
 
@@ -441,16 +441,11 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 };
 
 export default function startApp() {
-  var config = new Configuration(
-    Object.assign({ nodeId: 251 }, urlQuery.urlQueryParse(window.location.search))
-  );
+  var config = new Configuration(Object.assign({}, urlQuery.urlQueryParse(window.location.search)));
 
   var snUrlHelper = new UserUrlHelper(snEnv);
 
   var nimUrlHelper = new NimUrlHelper(nimEnv);
-
-  //var sshCredDialog = document.getElementById('ssh-credentials-dialog');
-  //dialogPolyfill.registerDialog(sshCredDialog);
 
   app = nimApp(nimUrlHelper, snUrlHelper, config).start();
   app.refreshBaseImageList();
