@@ -206,24 +206,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     activeImage = image;
     selectAll(".active-image-name").text(image.id);
     select("section.prepare").classed("disabled", false);
-  }
-
-  function handleBaseImageListClick() {
-    const event = d3event;
-    var target = event.target;
-    while (target && target.nodeName !== "LI") {
-      target = target.parentNode;
-    }
-
-    if (target && target.classList.contains("item")) {
-      const imageId = target.dataset[DATA_IMAGE_ID];
-      if (imageId) {
-        const image = baseImageForId(imageId);
-        if (image) {
-          chooseBaseImage(image);
-        }
-      }
-    }
+    selectAll("section.prepare input[disabled]").attr("disabled", null);
   }
 
   function renderImageGroups() {
@@ -377,6 +360,24 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     return this;
   }
 
+  function handleBaseImageListClick() {
+    const event = d3event;
+    var target = event.target;
+    while (target && target.nodeName !== "LI") {
+      target = target.parentNode;
+    }
+
+    if (target && target.classList.contains("item")) {
+      const imageId = target.dataset[DATA_IMAGE_ID];
+      if (imageId) {
+        const image = baseImageForId(imageId);
+        if (image) {
+          chooseBaseImage(image);
+        }
+      }
+    }
+  }
+
   function handleAuthorizationInputKeyup() {
     const event = d3event;
     if (event.defaultPrevented) {
@@ -418,12 +419,21 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     submit();
   }
 
+  function handleFishscriptInputChange() {
+    const event = d3event;
+    const input = event.target;
+    console.log("Selected fishscript: %s", input.value);
+    select("section.submit").classed("disabled", false);
+    selectAll("#submit-btn").attr("disabled", null);
+  }
+
   function init() {
     select("#authorize").on("click", authorize);
     selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
     select("#add-firstboot").on("click", handleAddFirstbootClick);
     select("#add-data-file").on("click", handleAddDataFileClick);
     select("#submit-btn").on("click", handleSubmitButtonClick);
+    select("#fishscript").on("change", handleFishscriptInputChange);
     return Object.defineProperties(self, {
       // property getter/setter functions
 

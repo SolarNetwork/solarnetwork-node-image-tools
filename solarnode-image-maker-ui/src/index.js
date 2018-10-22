@@ -4,6 +4,7 @@ import "./nim.css";
 import { library, dom } from "@fortawesome/fontawesome-svg-core";
 import {
   faCheckCircle,
+  faDownload,
   faHdd,
   faMinusSquare,
   faPlusCircle,
@@ -14,7 +15,16 @@ import {
 
 import startApp from "./nim.js";
 
-library.add(faCheckCircle, faHdd, faMinusSquare, faPlusCircle, faPlusSquare, faSync, faTimesCircle);
+library.add(
+  faCheckCircle,
+  faDownload,
+  faHdd,
+  faMinusSquare,
+  faPlusCircle,
+  faPlusSquare,
+  faSync,
+  faTimesCircle
+);
 dom.watch();
 
 if (!window.isLoaded) {

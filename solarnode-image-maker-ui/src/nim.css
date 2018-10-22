@@ -45,8 +45,13 @@ h2 {
 
 h3 {
   margin: 1.5rem 0 0;
-  font-size: 1.2em;
+  font-size: 1.2rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+h4 {
+  margin: 1.5rem 0 0;
+  font-size: 1rem;
 }
 
 a {
@@ -119,12 +124,18 @@ dialog + .backdrop {
   cursor: pointer;
 }
 
+.disabled.btn,
+.disabled .btn {
+  cursor: not-allowed;
+}
+
 .icon-btn {
   background-color: inherit !important;
   color: #fce94f;
 }
 
-.hidden {
+.hidden,
+.template {
   display: none;
 }
 
@@ -276,4 +287,24 @@ li.collapsibleListOpen {
 
 li.collapsibleListClosed {
   cursor: pointer;
+}
+
+/* Progress bar */
+
+.progress-bar {
+  width: 100%;
+}
+
+.progress-bar .progress {
+  display: inline-block;
+  background-color: #164e6e;
+  height: 1em;
+  line-height: 1em;
+  font-size: 0.8em;
+  font-weight: bold;
+  padding: 0.1em;
+}
+
+.hboxrow .progress-bar {
+  align-self: center;
 }
