@@ -364,15 +364,6 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
   }
 
-  function handleAddEnvVariable() {
-    const rowTemplate = document.getElementById("env-row-template");
-    const rowContainer = document.getElementById("env-row-container");
-    const newRow = rowTemplate.cloneNode(true);
-    newRow.classList.remove("hidden", "template");
-    newRow.removeAttribute("id");
-    rowContainer.appendChild(newRow);
-  }
-
   function handleAddFirstbootClick() {
     const addBtn = document.getElementById("add-firstboot");
     const container = document.getElementById("firstboot-container");
@@ -398,7 +389,6 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   function init() {
     select("#authorize").on("click", authorize);
     selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
-    select("#add-environment-variable").on("click", handleAddEnvVariable);
     select("#add-firstboot").on("click", handleAddFirstbootClick);
     select("#add-data-file").on("click", handleAddDataFileClick);
     return Object.defineProperties(self, {

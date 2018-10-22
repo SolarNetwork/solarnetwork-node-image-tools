@@ -37,34 +37,27 @@
 					extension.</p>
 				<input type="file" name="dataFile" accept="*.fish" required>
 
-				<h3>Environment variables</h3>
-				<p>You can configure any number of environment variables to pass to the <code>guestfish</code>
-					script.</p>
-				<div class="hboxrow">
-					<table class="env">
-						<thead>
-							<tr>
-								<th>Variable</th>
-								<th>Value</th>
-							</tr>
-							<tr id="env-row-template" class="hidden template">
-								<td contenteditable="true"></td>
-								<td contenteditable="true"></td>
-							</tr>
-						</thead>
-						<tbody id="env-row-container">
-							<tr>
-								<td contenteditable="true"></td>
-								<td contenteditable="true"></td>
-							</tr>
-						</tbody>
-					</table>
-					<div class="valign-bottom">
-						<button id="add-environment-variable" class="btn icon-btn" type="button">
-							<i class="fas fa-plus-circle fa-lg"></i>
-						</button>
-					</div>
+				<h3>Data files</h3>
+				<p>You can <b>optionally</b> provide any number of data files that will be made available to
+					the guestfish script. A common case is to provide one or more tar archives that can be
+					extracted into the root filesystem. The file names must <b>exactly</b> match the names
+					used in the guestfish script.</p>
+				<div id="data-file-container">
+					<input type="file" name="dataFile" accept="*.*">
+					<button id="add-data-file" class="btn icon-btn" type="button">
+						<i class="fas fa-plus-circle fa-lg"></i>
+					</button>
 				</div>
+
+				<h3>Options</h3>
+				<p>You can include an <b>optional</b> JSON document with environment variables
+					that get passed to the guestfish script.</p>
+				<pre class="example">{
+  "environment": {
+    "mode" : "production"
+  }
+}</pre>
+				<input type="file" name="options" accept="*.json">
 
 				<h3>Firstboot scripts</h3>
 				<p>You can <b>optionally</b> provide any number of shell scripts that will be executed
@@ -78,18 +71,6 @@ apt-get -qq clean</pre>
 				<div id="firstboot-container">
 					<input type="file" name="dataFile" accept="*.firstboot">
 					<button id="add-firstboot" class="btn icon-btn" type="button">
-						<i class="fas fa-plus-circle fa-lg"></i>
-					</button>
-				</div>
-
-				<h3>Data files</h3>
-				<p>You can <b>optionally</b> provide any number of data files that will be made available to
-					the guestfish script. A common case is to provide one or more tar archives that can be
-					extracted into the root filesystem. The file names must <b>exactly</b> match the names
-					used in the guestfish script.</p>
-				<div id="data-file-container">
-					<input type="file" name="dataFile" accept="*.*">
-					<button id="add-data-file" class="btn icon-btn" type="button">
 						<i class="fas fa-plus-circle fa-lg"></i>
 					</button>
 				</div>
