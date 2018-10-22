@@ -6,10 +6,14 @@ import {
   Configuration,
   urlQuery,
   UrlHelper,
-  UserUrlHelperMixin,
-  SortDescriptor
+  UserUrlHelperMixin
 } from "solarnetwork-api-core";
-import { NimUrlHelper, SolarNodeImageGroup, SolarNodeImageInfo } from "solarnetwork-api-nim";
+import {
+  NimUrlHelper,
+  SolarNodeImageGroup,
+  SolarNodeImageInfo,
+  SolarNodeImageReceipt
+} from "solarnetwork-api-nim";
 import { event as d3event, select, selectAll } from "d3-selection";
 import { json as jsonRequest } from "d3-request";
 import dialogPolyfill from "dialog-polyfill";
@@ -93,6 +97,9 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
   /** @type {SolarNodeImageInfo} */
   var activeImage = undefined;
+
+  /** @type {SolarNodeImageReceipt[]} */
+  var receipts = [];
 
   /**
    * Toggle a `hidden` class on a set of elements who have either a `success` or `error` class to match the result of performing some action.
@@ -310,14 +317,20 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   }
 
   function submit() {
+    const imageId = activeImage ? activeImage.id : undefined;
+    if (!imageId) {
+      console.error("No base image selected, cannot submit.");
+    }
     // submit multipart form
     const form = document.getElementById("nim-form");
     const xhr = new XMLHttpRequest();
+    const url = nimUrlHelper.createImageUrl(imageId);
     xhr.onload = submitSuccess;
-    xhr.open("POST");
+    xhr.onerror = submitError;
+    xhr.upload.addEventListener("progress", submitProgress);
+    xhr.open("POST", url);
     xhr.setRequestHeader("Accept", "application/json");
     xhr.send(new FormData(form));
-    oReq.upload.addEventListener("progress", submitProgress);
 
     function submitSuccess() {
       /** @type {XMLHttpRequest} */
@@ -329,6 +342,11 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
       } else {
         json = JSON.parse(xhr.responseText);
       }
+      if (json && json.success && json.data) {
+        let receipt = SolarNodeImageReceipt.fromJsonEncoding(json.data);
+        receipts.push(receipt);
+        // TODO: show progress for receipt
+      }
     }
 
     function submitProgress(event) {
@@ -336,6 +354,16 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
         const percentComplete = (event.loaded / event.total) * 100;
         console.info("Upload progress: %d%%", percentComplete);
       }
+    }
+
+    function submitError() {
+      /** @type {XMLHttpRequest} */
+      const xhr = this;
+      console.error(
+        "Error submitting image (%s), got response: %s",
+        xhr.statusText,
+        xhr.responseText
+      );
     }
   }
 
@@ -386,11 +414,16 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     container.insertBefore(newInput, addBtn);
   }
 
+  function handleSubmitButtonClick() {
+    submit();
+  }
+
   function init() {
     select("#authorize").on("click", authorize);
     selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
     select("#add-firstboot").on("click", handleAddFirstbootClick);
     select("#add-data-file").on("click", handleAddDataFileClick);
+    select("#submit-btn").on("click", handleSubmitButtonClick);
     return Object.defineProperties(self, {
       // property getter/setter functions
 

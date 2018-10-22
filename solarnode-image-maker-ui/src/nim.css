@@ -120,7 +120,7 @@ dialog + .backdrop {
 }
 
 .icon-btn {
-  background-color: inherit;
+  background-color: inherit !important;
   color: #fce94f;
 }
 
@@ -170,6 +170,7 @@ button {
   min-height: 40px;
 }
 
+.disabled button,
 button:disabled {
   background-color: #666;
   opacity: 0.5;
