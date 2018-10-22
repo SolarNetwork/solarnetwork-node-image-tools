@@ -81,6 +81,18 @@ apt-get -qq clean</pre>
 						<i class="fas fa-plus-circle fa-lg"></i>
 					</button>
 				</div>
+
+				<h3>Data files</h3>
+				<p>You can <b>optionally</b> provide any number of data files that will be made available to
+					the guestfish script. A common case is to provide one or more tar archives that can be
+					extracted into the root filesystem. The file names must <b>exactly</b> match the names
+					used in the guestfish script.</p>
+				<div id="data-file-container">
+					<input type="file" name="dataFile" accept="*.*">
+					<button id="add-data-file" class="btn icon-btn" type="button">
+						<i class="fas fa-plus-circle fa-lg"></i>
+					</button>
+				</div>
 			</form>
 		</section>
 		<section class="submit disabled">

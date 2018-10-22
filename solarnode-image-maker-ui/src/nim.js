@@ -384,11 +384,23 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     container.insertBefore(newInput, addBtn);
   }
 
+  function handleAddDataFileClick() {
+    const addBtn = document.getElementById("add-data-file");
+    const container = document.getElementById("data-file-container");
+    const newInput = document.createElement("input");
+    newInput.setAttribute("type", "file");
+    newInput.setAttribute("name", "dataFile");
+    newInput.setAttribute("accept", "*.*");
+    container.insertBefore(document.createElement("br"), addBtn);
+    container.insertBefore(newInput, addBtn);
+  }
+
   function init() {
     select("#authorize").on("click", authorize);
     selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
     select("#add-environment-variable").on("click", handleAddEnvVariable);
     select("#add-firstboot").on("click", handleAddFirstbootClick);
+    select("#add-data-file").on("click", handleAddDataFileClick);
     return Object.defineProperties(self, {
       // property getter/setter functions
 
