@@ -38,6 +38,12 @@ const snEnv = null; /*new Environment({
 /** The HTML data property name used to hold a `SolarNodeImageInfo` ID. */
 const DATA_IMAGE_ID = "imageId";
 
+/** The HTML data property name used to hold a `SolarNodeImageReceipt` ID. */
+const DATA_RECEIPT_ID = "receiptId";
+
+/** The default receipt refresh rate, in milliseconds. */
+const DEFAULT_REFRESH_RECEIPT_RATE = 5000;
+
 var app;
 
 class UserUrlHelper extends UserUrlHelperMixin(UrlHelper) {}
@@ -86,7 +92,8 @@ function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUr
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   const self = { version: "0.1.0" };
   const config = options || {
-    solarNetworkAuthorization: false
+    solarNetworkAuthorization: false,
+    receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
   };
 
   /** @type {SolarNodeImageInfo[]} */
@@ -100,6 +107,24 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
   /** @type {SolarNodeImageReceipt[]} */
   var receipts = [];
+
+  /**
+   * Get/set the receipt refresh rate.
+   *
+   * @param {number} [val] the rate to set, in milliseconds
+   * @returns {number|this} when used as a getter, the current rate; when used as a setter this object
+   */
+  function receiptRefreshRate(val) {
+    if (!val) {
+      let v = config.receiptRefreshRate;
+      if (!v) {
+        v = DEFAULT_REFRESH_RECEIPT_RATE;
+      }
+      return v;
+    }
+    config.receiptRefreshRate = v;
+    return self;
+  }
 
   /**
    * Toggle a `hidden` class on a set of elements who have either a `success` or `error` class to match the result of performing some action.
@@ -147,7 +172,6 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
       // stash session key onto the NIM UrlHelper
       nimUrlHelper.nimSessionKey = json.data;
-      listBaseImages();
     }
 
     function authorizeError(event) {
@@ -299,6 +323,101 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
   }
 
+  /**
+   * Schedule a repeating task to refresh the receipt status of a given receipt.
+   *
+   * @param {SolarNodeImageReceipt} receipt the receipt to refresh
+   */
+  function scheduleReceiptRefresh(receipt) {
+    setTimeout(function() {
+      const url = nimUrlHelper.createImageReceiptUrl(receipt.id);
+      const req = jsonRequest(url)
+        .on("load", function(json) {
+          if (json && json.success && json.data) {
+            const idx = receipts.indexOf(receipt);
+            const newReceipt = SolarNodeImageReceipt.fromJsonEncoding(json.data);
+            receipts[idx] = newReceipt;
+            renderReceipt(newReceipt);
+            if (!newReceipt.done) {
+              scheduleReceiptRefresh(newReceipt);
+            }
+          } else {
+            console.error("Error getting receipt %s: %s", receipt.id, JSON.serialize(json));
+          }
+        })
+        .on("error", function(event) {
+          const xhr = event.target;
+          console.error("Failed to authorize session: %s %s", xhr.status, xhr.responseText);
+        });
+      req.send("GET");
+    }, receiptRefreshRate());
+  }
+
+  function renderReceipts() {
+    receipts.forEach(renderReceipt);
+  }
+
+  /**
+   * Render a receipt as HTML.
+   *
+   * @param {SolarNodeImageReceipt} receipt the receipt to render
+   */
+  function renderReceipt(receipt) {
+    const containerEl = document.getElementById("progress-container");
+    const kids = containerEl.children;
+    var receiptEl;
+    for (let i = 0; i < kids.length; i += 1) {
+      receiptEl = kids[i];
+      let receiptId = receiptEl.dataset[DATA_RECEIPT_ID];
+      if (receipt.id === receiptId) {
+        renderReceiptUpdate(receiptEl, receipt);
+        return;
+      }
+    }
+    // not found; add new
+    const template = document.getElementById("image-receipt-template");
+    receiptEl = template.cloneNode(true);
+    receiptEl.removeAttribute("id");
+    receiptEl.classList.remove("template");
+    receiptEl.dataset[DATA_RECEIPT_ID] = receipt.id;
+    renderReceiptUpdate(receiptEl, receipt);
+    containerEl.appendChild(receiptEl);
+  }
+
+  /**
+   * Render a receipt into HTML.
+   *
+   * @param {Element} receiptEl the receipt container
+   * @param {SolarNodeImageReceipt} receipt the receipt to render
+   */
+  function renderReceiptUpdate(receiptEl, receipt) {
+    select(receiptEl)
+      .selectAll(".base-image-id")
+      .text(receipt.baseImageId);
+
+    select(receiptEl)
+      .selectAll(".receipt-message")
+      .text(receipt.message);
+
+    const progress = receipt.percentComplete * 100;
+
+    select(receiptEl)
+      .selectAll(".progress")
+      .style("width", `${progress}%`)
+      .text(`${Math.round(progress)}%`);
+
+    if (receipt.done) {
+      let url = receipt.downloadUrl;
+      if (!url) {
+        url = nimUrlHelper.downloadImageUrl(receipt.id);
+      }
+      select(receiptEl)
+        .select(".download-image")
+        .attr("href", url)
+        .classed("disabled", false);
+    }
+  }
+
   function submit() {
     const imageId = activeImage ? activeImage.id : undefined;
     if (!imageId) {
@@ -328,7 +447,8 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
       if (json && json.success && json.data) {
         let receipt = SolarNodeImageReceipt.fromJsonEncoding(json.data);
         receipts.push(receipt);
-        // TODO: show progress for receipt
+        renderReceipts();
+        scheduleReceiptRefresh(receipt);
       }
     }
 

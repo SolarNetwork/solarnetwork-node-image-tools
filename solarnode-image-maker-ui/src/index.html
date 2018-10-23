@@ -29,7 +29,7 @@
 		</section>
 		<section class="prepare disabled">
 			<h2>Steady <span class="active-image-name"></span></h2>
-			<p>Select the items you'd like to customize.</p>
+			<p>Select the items to customize the base image with.</p>
 			<form id="nim-form" enctype="multipart/form-data">
 				<h3>Guestfish script</h3>
 				<p>A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required
@@ -83,17 +83,17 @@ apt-get -qq clean</pre>
 			<div id="progress">
 				<h3>Progress</h3>
 				<p>Your image customization progress is shown here.</p>
-				<div class="image-progress">
-					<h4>foo-bar-20181001</h4>
+				<div id="image-receipt-template" class="image-progress template">
+					<h4 class="base-image-id">foo-bar-20181001</h4>
+					<p class="receipt-message">Message here...</p>
 					<div class="hboxrow">
-						<div id="progress-bar-template" class="progress-bar"><span class="progress" style="width: 55%;">55%</span></div>
-						<button type="button" class="btn icon-btn disabled">
-							<i class="fas fa-download fa-lg"></i>
-						</button>
+						<div class="progress-bar"><span class="progress" style="width: 55%;">0%</span></div>
+						<a href="#" class="btn icon-btn download-image disabled">
+							<i class="fas fa-download fa-1x"></i>
+						</a>
 					</div>
 				</div>
 				<div id="progress-container">
-
 				</div>
 			</div>
 		</section>
