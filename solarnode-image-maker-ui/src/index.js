@@ -1,4 +1,3 @@
-import "dialog-polyfill/dialog-polyfill.css";
 import "./nim.css";
 
 import { library, dom } from "@fortawesome/fontawesome-svg-core";

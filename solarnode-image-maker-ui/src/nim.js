@@ -16,7 +16,6 @@ import {
 } from "solarnetwork-api-nim";
 import { event as d3event, select, selectAll } from "d3-selection";
 import { json as jsonRequest } from "d3-request";
-import dialogPolyfill from "dialog-polyfill";
 import CollapsibleLists from "./collapsible-lists.js";
 
 // for development, can un-comment out the nimEnv and instrEnv objects
