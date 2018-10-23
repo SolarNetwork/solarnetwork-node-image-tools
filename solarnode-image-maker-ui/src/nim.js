@@ -91,7 +91,7 @@ function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUr
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   const self = { version: "0.1.0" };
   const config = options || {
-    solarNetworkAuthorization: false,
+    solarNetworkAuthorization: true,
     receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
   };
 
@@ -171,6 +171,9 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
       // stash session key onto the NIM UrlHelper
       nimUrlHelper.nimSessionKey = json.data;
+
+      // reload image list, in case auth was required
+      listBaseImages();
     }
 
     function authorizeError(event) {
@@ -455,6 +458,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
       if (event.lengthComputable) {
         const percentComplete = (event.loaded / event.total) * 100;
         console.info("Upload progress: %d%%", percentComplete);
+        // TODO: update upload progress bar
       }
     }
 
@@ -570,7 +574,15 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 };
 
 export default function startApp() {
-  var config = new Configuration(Object.assign({}, urlQuery.urlQueryParse(window.location.search)));
+  var config = new Configuration(
+    Object.assign(
+      {
+        solarNetworkAuthorization: true,
+        receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
+      },
+      urlQuery.urlQueryParse(window.location.search)
+    )
+  );
 
   var snUrlHelper = new UserUrlHelper(snEnv);
 
