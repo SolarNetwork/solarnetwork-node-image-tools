@@ -27,10 +27,10 @@ import java.io.InputStream;
 import java.util.function.Supplier;
 
 /**
- * FIXME
+ * API for a cached data stream.
  * 
  * <p>
- * TODO
+ * This API is used to provide locally cached copies of remote resources.
  * </p>
  * 
  * @author matt
@@ -38,6 +38,23 @@ import java.util.function.Supplier;
  */
 public interface DataStreamCache {
 
+  /**
+   * Get a data stream.
+   * 
+   * <p>
+   * This returns a cached stream if possible. If a cached stream is not available, the given
+   * {@code supplier} will be asked to provide the stream, and the result will be cached for future
+   * use.
+   * </p>
+   * 
+   * @param key
+   *          a unique key for the stream
+   * @param supplier
+   *          a data stream provider, in case the stream is not found in the cache
+   * @return the data stream
+   * @throws IOException
+   *           if any IO error occurs
+   */
   InputStream get(String key, Supplier<InputStream> supplier) throws IOException;
 
 }
