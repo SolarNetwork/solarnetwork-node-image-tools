@@ -5,7 +5,7 @@ produce a customized SolarNode OS image file.
 
 Here's a demo of how the app works:
 
-![demo](docs/solarssh-demo-shell.gif)
+![demo](docs/nim-ui-demo.gif)
 
 # Use
 
