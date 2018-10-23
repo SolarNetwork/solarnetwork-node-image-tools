@@ -1,13 +1,15 @@
-# SolarNode Image Maker
+# SolarNode Image Maker UI
 
 This project contains a webapp that uses a [SolarNode Image Maker (NIM)][nim] server to
 produce a customized SolarNode OS image file.
 
+Here's a demo of how the app works:
+
+![demo](docs/solarssh-demo-shell.gif)
 
 # Use
 
-TODO
-
+The app includes built-in instructions on how to use it.
 
 # Building
 
@@ -44,13 +46,11 @@ yarn run build --config webpack.prod.js
 
 and the app will be built in the `dist` directory.
 
-
 # Development
 
 This app uses the [SolarNetwork Core library][sn-api-core].
 
-
-  [npm]: https://www.npmjs.com/
-  [yarn]: https://yarnpkg.com/
-  [nim]: https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker
-  [sn-api-core]: https://github.com/SolarNetwork/sn-api-core-js
+[npm]: https://www.npmjs.com/
+[yarn]: https://yarnpkg.com/
+[nim]: https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker
+[sn-api-core]: https://github.com/SolarNetwork/sn-api-core-js
