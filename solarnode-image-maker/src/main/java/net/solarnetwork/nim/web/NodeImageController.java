@@ -165,6 +165,10 @@ public class NodeImageController {
       throws IOException {
     List<SolarNodeImageResource> resources = new ArrayList<>(dataFiles.length);
     for (MultipartFile dataFile : dataFiles) {
+      if (dataFile.getOriginalFilename() == null || dataFile.getOriginalFilename().isEmpty()) {
+        // skip empty file uploads
+        continue;
+      }
       resources.add(new MultipartFileSolarNodeImageResource(dataFile));
     }
     SolarNodeImageOptions options = null;

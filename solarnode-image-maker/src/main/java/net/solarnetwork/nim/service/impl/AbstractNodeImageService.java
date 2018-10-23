@@ -175,6 +175,9 @@ public abstract class AbstractNodeImageService implements NodeImageService {
     // copy input data on calling thread, so things like multipart temp files aren't deleted
     final List<Path> resourceFiles = new ArrayList<>(8);
     for (SolarNodeImageResource rsrc : resources) {
+      if (rsrc.getFilename() == null || rsrc.getFilename().isEmpty()) {
+        continue;
+      }
       Path dest = root.resolve(rsrc.getFilename());
       resourceFiles.add(dest);
       log.info("Transferring resource {} to {}", rsrc.getFilename(), dest);
