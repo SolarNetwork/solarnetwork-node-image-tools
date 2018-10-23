@@ -6,8 +6,7 @@
 	<meta name="viewport" content="width=570">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<title>SolarNode Image Maker</title>
-	<link type="text/css" rel="stylesheet" href="css/dialog-polyfill.css">
+	<title>NIM: SolarNode Image Maker</title>
 	<link type="text/css" rel="stylesheet" href="css/nim.css">
 </head>
 
@@ -24,7 +23,13 @@
 	<main class="hboxrow">
 		<section class="choose-base">
 			<h2>Ready</h2>
-			<p>Choose the base OS image you'd like to customize.</p>
+			<p>NIM makes it easy to create customized SolarNode OS images by starting with a well-known "base" OS image
+				and applying changes to it. If you manage a fleet of nodes, this is a great way to integrate your
+				specific settings and SolarNode plugins directly into the image so SolarNode is ready to deploy into your
+				environment from the moment it boots up the first time.</p>
+
+			<p>Start by authorizing yourself with a SolarNetwork security token. Then choose the base OS image you'd like
+				to customize from the following list:</p>
 			<div id="base-image-listing"></div>
 		</section>
 		<section class="prepare disabled">
@@ -79,16 +84,26 @@ apt-get -qq clean</pre>
 		<section class="submit disabled">
 			<h2>Go!</h2>
 			<p>Once you're satisifed with your care, hit the <b>Press Me</b> button to submit your request.</p>
-			<button type="button" id="submit-btn" class="btn" disabled>Press Me</button>
+			<div class="hboxrow">
+				<button type="button" id="submit-btn" class="btn" disabled>Press Me</button>
+				<div id="submit-progress" class="hidden" style="margin-left: 1rem; flex: 1;">
+					<p class="upload-message">Uploading…</p>
+					<div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
+				</div>
+			</div>
+			<div id="alert" class="hidden">
+				<h3>🤯🤬😭😞</h3>
+				<p class="receipt-message">Something is amiss! <span class="message"></span></p>
+			</div>
 			<div id="progress">
 				<h3>Progress</h3>
 				<p>Your image customization progress is shown here.</p>
 				<div id="image-receipt-template" class="image-progress template">
 					<h4 class="base-image-id">foo-bar-20181001</h4>
-					<p class="receipt-message">Message here...</p>
+					<p class="receipt-message">Message here…</p>
 					<div class="hboxrow">
-						<div class="progress-bar"><span class="progress" style="width: 55%;">0%</span></div>
-						<a href="#" class="btn icon-btn download-image disabled">
+						<div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
+						<a href="#" class="btn icon-btn download-image disabled" style="margin-left: 0.5rem;">
 							<i class="fas fa-download fa-1x"></i>
 						</a>
 					</div>

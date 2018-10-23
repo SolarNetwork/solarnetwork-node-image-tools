@@ -125,6 +125,13 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     return self;
   }
 
+  function toggleAlert(enabled, message) {
+    select("#alert")
+      .classed("hidden", !enabled)
+      .select(".message")
+      .text(message || "");
+  }
+
   /**
    * Toggle a `hidden` class on a set of elements who have either a `success` or `error` class to match the result of performing some action.
    *
@@ -139,6 +146,8 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   }
 
   function authorize() {
+    const authBtn = select("#authorize");
+    authBtn.attr("disabled", "disabled");
     const tokenId = select("input[name=token]").property("value");
     const authBuilder = new AuthorizationV2Builder(tokenId, snUrlHelper);
     authBuilder.saveSigningKey(select("input[name=secret]").property("value"));
@@ -162,7 +171,8 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
 
     function authorizeSuccess(json) {
-      if (!(json.success && json.data)) {
+      authBtn.attr("disabled", null);
+      if (!(json && json.success && json.data)) {
         console.error("Failed to authorize session: %s", JSON.stringify(json));
         return;
       }
@@ -178,6 +188,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
     function authorizeError(event) {
       const xhr = event.target;
+      authBtn.attr("disabled", null);
       console.error("Failed to authorize session: %s %s", xhr.status, xhr.responseText);
       toggleResultHidden("auth", false);
     }
@@ -420,11 +431,21 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     }
   }
 
+  function updateProgressBarProgress(progressBarSelection, percent) {
+    const percentComplete = percent * 100;
+    progressBarSelection
+      .style("width", `${percentComplete}%`)
+      .text(`${Math.round(percentComplete)}%`);
+  }
+
   function submit() {
     const imageId = activeImage ? activeImage.id : undefined;
     if (!imageId) {
       console.error("No base image selected, cannot submit.");
     }
+    const submitBtn = select("#submit-btn");
+    submitBtn.attr("disabled", "disabled");
+
     // submit multipart form
     const form = document.getElementById("nim-form");
     const xhr = new XMLHttpRequest();
@@ -436,9 +457,15 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     xhr.setRequestHeader("Accept", "application/json");
     xhr.send(new FormData(form));
 
+    const uploadProgressContainer = select("#submit-progress");
+    const uploadProgressBar = uploadProgressContainer.select(".progress");
+    updateProgressBarProgress(uploadProgressBar, 0);
+    uploadProgressContainer.classed("hidden", false);
+
     function submitSuccess() {
-      /** @type {XMLHttpRequest} */
-      const xhr = this;
+      uploadProgressContainer.classed("hidden", true);
+      submitBtn.attr("disabled", null);
+
       var json = undefined;
       console.info("Submitted image, got response: %s", xhr.responseText);
       if (xhr.responseType === "json") {
@@ -456,30 +483,34 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
     function submitProgress(event) {
       if (event.lengthComputable) {
-        const percentComplete = (event.loaded / event.total) * 100;
-        console.info("Upload progress: %d%%", percentComplete);
-        // TODO: update upload progress bar
+        const percentComplete = event.loaded / event.total;
+        console.info("Upload progress: %d%%", percentComplete * 100);
+        updateProgressBarProgress(uploadProgressBar, percentComplete);
       }
     }
 
     function submitError() {
-      /** @type {XMLHttpRequest} */
-      const xhr = this;
+      uploadProgressContainer.classed("hidden", true);
+      submitBtn.attr("disabled", null);
       console.error(
         "Error submitting image (%s), got response: %s",
         xhr.statusText,
         xhr.responseText
       );
+      toggleAlert(
+        true,
+        `Error submitting image ${imageId}: ${xhr.statusText}: ${xhr.responseText}`
+      );
     }
   }
 
   function start() {
-    // TODO
+    listBaseImages();
     return this;
   }
 
   function stop() {
-    // TODO
+    // nothing to do
     return this;
   }
 
@@ -558,13 +589,6 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     select("#submit-btn").on("click", handleSubmitButtonClick);
     select("#fishscript").on("change", handleFishscriptInputChange);
     return Object.defineProperties(self, {
-      // property getter/setter functions
-
-      // TODO
-
-      // action methods
-      refreshBaseImageList: { value: listBaseImages },
-
       start: { value: start },
       stop: { value: stop }
     });
@@ -589,7 +613,6 @@ export default function startApp() {
   var nimUrlHelper = new NimUrlHelper(nimEnv);
 
   app = nimApp(nimUrlHelper, snUrlHelper, config).start();
-  app.refreshBaseImageList();
 
   window.onbeforeunload = function() {
     app.stop();

@@ -12,6 +12,7 @@ html {
 
 body {
   font-family: "DejaVu Sans Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 11pt;
   margin: 10px;
   background: none;
 }
@@ -41,6 +42,11 @@ h1 {
 h2 {
   margin: 0.2rem 0;
   font-size: 1.4em;
+  color: #a9d685;
+}
+
+.disabled h2 {
+  color: inherit;
 }
 
 h3 {
@@ -203,8 +209,8 @@ button.secondary {
 }
 
 svg.success {
-  color: #0e780e;
-  fill: #0e780e;
+  color: #7ecc77;
+  fill: #7ecc77;
 }
 
 svg.error {
@@ -242,6 +248,8 @@ section.disabled {
 
 section.choose-base {
   background-color: rgba(0, 0, 0, 0.1);
+  flex-basis: 320px;
+  flex-shrink: 0;
 }
 
 section.prepare {
@@ -250,6 +258,8 @@ section.prepare {
 
 section.submit {
   background-color: rgba(0, 0, 0, 0.3);
+  flex-basis: 300px;
+  flex-shrink: 0;
 }
 
 .base-item-list li.item {
@@ -273,9 +283,11 @@ pre.example {
   background-color: rgba(255, 255, 255, 0.5);
   border-radius: 4px;
   color: black;
+  font-size: 10pt;
 }
 
-.receipt-message {
+.receipt-message,
+.upload-message {
   margin-top: 0.125rem;
   margin-bottom: 0.125rem;
   font-size: 0.75rem;
@@ -288,6 +300,10 @@ div.image-progress + div.image-progress {
 }
 
 /* Collapsing lists */
+
+.base-item-list > .collapsibleList {
+  margin-left: 24px;
+}
 
 .collapsibleList li {
   cursor: auto;
