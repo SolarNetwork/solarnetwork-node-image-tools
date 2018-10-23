@@ -50,10 +50,12 @@ import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.web.security.WebConstants;
 
 /**
- * FIXME
+ * {@link NodeImageAuthorizor} implementation that authorizes by calling the SolarNetwork
+ * {@literal /solaruser/api/v1/sec/whoami} endpoint using a pre-signed SNWS2 token.
  * 
  * <p>
- * TODO
+ * The {@code authorization} value must be a SNWS2 {@code Authorized} HTTP header value for the
+ * {@literal /solaruser/api/v1/sec/whoami} endpoint at the configured SolarNetwork API base URL.
  * </p>
  * 
  * @author matt
