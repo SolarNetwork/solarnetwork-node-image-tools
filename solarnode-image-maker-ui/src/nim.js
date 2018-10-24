@@ -179,6 +179,8 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
       console.info("Got image authorization session key: %s", json.data);
       toggleResultHidden("auth", true);
 
+      selectAll(".hide-after-auth").classed("hidden", true);
+
       // stash session key onto the NIM UrlHelper
       nimUrlHelper.nimSessionKey = json.data;
 
@@ -256,6 +258,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     imageGroups.forEach(function(group) {
       appendImageGroup(group, root);
     });
+    select("#base-image-listing").classed("hidden", false);
     selectAll("#base-image-listing > ul").remove();
 
     const container = document.getElementById("base-image-listing");
@@ -505,7 +508,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
   }
 
   function start() {
-    listBaseImages();
+    // nothing to do
     return this;
   }
 

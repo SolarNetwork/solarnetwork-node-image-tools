@@ -299,6 +299,10 @@ div.image-progress + div.image-progress {
   border-top: 1px solid rgba(0, 0, 0, 0.2);
 }
 
+.strong {
+  font-weight: bold;
+}
+
 /* Collapsing lists */
 
 .base-item-list > .collapsibleList {
