@@ -172,7 +172,8 @@ public class NodeImageController {
       resources.add(new MultipartFileSolarNodeImageResource(dataFile));
     }
     SolarNodeImageOptions options = null;
-    if (optionsFile != null) {
+    if (optionsFile != null && optionsFile.getOriginalFilename() != null
+        && !optionsFile.getOriginalFilename().isEmpty() && optionsFile.getSize() > 0) {
       options = OBJECT_MAPPER.readValue(optionsFile.getInputStream(), SolarNodeImageOptions.class);
     }
     SolarNodeImage image = nodeImageRepo.findOne(imageId);
