@@ -1,6 +1,6 @@
 {
   "name": "solarnode-image-maker-ui",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "SolarNode Image Maker UI",
   "keywords": [
     "solarnetwork",
@@ -27,7 +27,7 @@
     "d3-request": "^1.0.5",
     "d3-selection": "^1.1.0",
     "solarnetwork-api-core": "0.14",
-    "solarnetwork-api-nim": "solarnetwork/sn-api-nim-js#develop"
+    "solarnetwork-api-nim": "^1.0.0"
   },
   "devDependencies": {
     "ava": "^0.25.0",

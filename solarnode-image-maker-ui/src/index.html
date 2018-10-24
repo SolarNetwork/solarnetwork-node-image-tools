@@ -39,12 +39,21 @@
 				<h3>Guestfish script</h3>
 				<p>A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required
 					to perform the customization. This file must be named with a <code>.fish</code>
-					extension.</p>
+					extension. Note that <a href="https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker#customization">not
+						all guestfish commands are supported</a>. The script will be able to access any data file you upload, by name.</p>
+				<p>For example, if you upload an <code>xz</code> compressed <code>tar</code> archive
+					named <b>my-node-config.txz</b> that contains configuration files that belong in
+					the <code>~solar/conf/services</code> directory, your script might contain:</p>
+				<pre class="example"># Copy configuration files
+tar-in my-node-config.txz /home/solar/conf/services compress:xz
+
+# Zero free space to make image compress better
+zero-free-space /</pre>
 				<input id="fishscript" type="file" name="dataFile" accept="*.fish" autocomplete="off" required disabled>
 
 				<h3>Data files</h3>
 				<p>You can <b>optionally</b> provide any number of data files that will be made available to
-					the guestfish script. A common case is to provide one or more tar archives that can be
+					the guestfish script by name. A common case is to provide one or more tar archives that can be
 					extracted into the root filesystem. The file names must <b>exactly</b> match the names
 					used in the guestfish script.</p>
 				<div id="data-file-container">
@@ -56,7 +65,9 @@
 
 				<h3>Options</h3>
 				<p>You can include an <b>optional</b> JSON document with environment variables
-					that get passed to the guestfish script.</p>
+					that get passed to the guestfish script. For example, to make the guestfish
+					variable <code>$mode</code> have a value of <code>production</code> you
+					could upload a JSON document like this:</p>
 				<pre class="example">{
   "environment": {
     "mode" : "production"

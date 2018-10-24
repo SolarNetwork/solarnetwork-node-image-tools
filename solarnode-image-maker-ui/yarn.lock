@@ -5713,9 +5713,10 @@ solarnetwork-api-core@0.14:
     d3-time-format "^2.0.5"
     uri-js "^3.0.2"
 
-solarnetwork-api-nim@solarnetwork/sn-api-nim-js#develop:
-  version "0.1.0-dev.0"
-  resolved "https://codeload.github.com/solarnetwork/sn-api-nim-js/tar.gz/4aa02146a6c588d38bc5d471fd626765dae832f8"
+solarnetwork-api-nim@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/solarnetwork-api-nim/-/solarnetwork-api-nim-1.0.0.tgz#705a8bb556e393f68ddddb1ffa64a2f38098154a"
+  integrity sha512-9Fq5AttzfAqWA1G3bE1bJ0MWm/b6+VJAHQjw5iZVEkiy25OXpOVFi+32ctUKdBTwD2+il+2daGKUw6ZshaeUHg==
   dependencies:
     solarnetwork-api-core "0.13"
 
