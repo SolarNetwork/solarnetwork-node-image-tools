@@ -210,7 +210,7 @@ public abstract class AbstractNodeImageService implements NodeImageService {
               Hex.encodeHex(uncompressedDigest.digest()));
           if (!sourceImage.getUncompressedSha256().equalsIgnoreCase(decompressedImageDigest)) {
             throw new RuntimeException("Image " + sourceImage.getId()
-                + "uncompressed SHA-256 digest " + decompressedImageDigest + " does not match "
+                + " uncompressed SHA-256 digest " + decompressedImageDigest + " does not match "
                 + sourceImage.getUncompressedSha256());
           }
 
