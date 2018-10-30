@@ -152,7 +152,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     const authBuilder = new AuthorizationV2Builder(tokenId, snUrlHelper);
     authBuilder.saveSigningKey(select("input[name=secret]").property("value"));
 
-    if (config.solarNetworkAuthorization) {
+    if (config.solarNetworkAuthorization == "true") {
       // get authorized session key from SN
       executeWithSignedAuthorization("GET", snUrlHelper.nimAuthorizeUrl(), authBuilder)
         .on("load", authorizeSuccess)
