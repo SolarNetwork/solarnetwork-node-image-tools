@@ -1,134 +1,186 @@
 <!DOCTYPE html>
 <html class="standalone">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=570" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>NIM: SolarNode Image Maker</title>
+  </head>
 
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=570">
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-	<title>NIM: SolarNode Image Maker</title>
-	<link type="text/css" rel="stylesheet" href="css/nim.css">
-</head>
+  <body>
+    <header class="hboxrow">
+      <h1>SolarNode Image Maker</h1>
+      <i
+        class="fas fa-check-circle fa-2x auth result success hidden"
+        title="Authorization successful"
+      ></i>
+      <i
+        class="fas fa-times-circle fa-2x auth result error hidden"
+        title="Authorization failed"
+      ></i>
+      <input
+        type="text"
+        class="auth"
+        name="token"
+        placeholder="Token"
+        value=""
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+      <input type="password" class="auth" name="secret" placeholder="Secret" value="" />
+      <button type="button" id="authorize">Authorize</button>
+    </header>
+    <main class="hboxrow">
+      <section class="choose-base">
+        <h2>Ready</h2>
+        <p>
+          NIM makes it easy to create customized SolarNode OS images by starting with a well-known
+          "base" OS image and applying changes to it. If you manage a fleet of nodes, this is a
+          great way to integrate your specific settings and SolarNode plugins directly into the
+          image so SolarNode is ready to deploy into your environment from the moment it boots up
+          the first time.
+        </p>
 
-<body>
-	<header class="hboxrow">
-		<h1>SolarNode Image Maker</h1>
-		<i class="fas fa-check-circle fa-2x auth result success hidden" title="Authorization successful"></i>
-		<i class="fas fa-times-circle fa-2x auth result error hidden" title="Authorization failed"></i>
-		<input type="text" class="auth" name="token" placeholder="Token" value="" autocomplete="off" autocorrect="off"
-		 autocapitalize="off" spellcheck="false">
-		<input type="password" class="auth" name="secret" placeholder="Secret" value="">
-		<button type="button" id="authorize">Authorize</button>
-	</header>
-	<main class="hboxrow">
-		<section class="choose-base">
-			<h2>Ready</h2>
-			<p>NIM makes it easy to create customized SolarNode OS images by starting with a well-known "base" OS image
-				and applying changes to it. If you manage a fleet of nodes, this is a great way to integrate your
-				specific settings and SolarNode plugins directly into the image so SolarNode is ready to deploy into your
-				environment from the moment it boots up the first time.</p>
-
-			<p class="hide-after-auth strong">Start by authorizing yourself with a SolarNetwork security
-				token in the login form at the top right of this window.</p>
-			<div id="base-image-listing" class="hidden">
-				<p class="strong">Choose the base OS image you'd like to customize from this list:</p>
-			</div>
-		</section>
-		<section class="prepare disabled">
-			<h2>Steady <span class="active-image-name"></span></h2>
-			<p>Select the items to customize the base image with.</p>
-			<form id="nim-form" enctype="multipart/form-data">
-				<h3>Guestfish script</h3>
-				<p>A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required
-					to perform the customization. This file must be named with a <code>.fish</code>
-					extension. Note that <a href="https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker#customization">not
-						all guestfish commands are supported</a>. The script will be able to access any data file you upload, by name.</p>
-				<p>For example, if you upload an <code>xz</code> compressed <code>tar</code> archive
-					named <b>my-node-config.txz</b> that contains configuration files that belong in
-					the <code>~solar/conf/services</code> directory, your script might contain:</p>
-				<pre class="example"># Copy configuration files
+        <p class="hide-after-auth strong">
+          Start by authorizing yourself with a SolarNetwork security token in the login form at the
+          top right of this window.
+        </p>
+        <div id="base-image-listing" class="hidden">
+          <p class="strong">Choose the base OS image you'd like to customize from this list:</p>
+        </div>
+      </section>
+      <section class="prepare disabled">
+        <h2>Steady <span class="active-image-name"></span></h2>
+        <p>Select the items to customize the base image with.</p>
+        <form id="nim-form" enctype="multipart/form-data">
+          <h3>Guestfish script</h3>
+          <p>
+            A <a href="http://libguestfs.org/guestfish.1.html">guestfish</a> script is required to
+            perform the customization. This file must be named with a <code>.fish</code> extension.
+            Note that
+            <a
+              href="https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker#customization"
+              >not all guestfish commands are supported</a
+            >. The script will be able to access any data file you upload, by name.
+          </p>
+          <p>
+            For example, if you upload an <code>xz</code> compressed <code>tar</code> archive named
+            <b>my-node-config.txz</b> that contains configuration files that belong in the
+            <code>~solar/conf/services</code> directory, your script might contain:
+          </p>
+          <pre class="example">
+# Copy configuration files
 tar-in my-node-config.txz /home/solar/conf/services compress:xz
 
 # Zero free space to make image compress better
-zero-free-space /</pre>
-				<input id="fishscript" type="file" name="dataFile" accept="*.fish" autocomplete="off" required disabled>
+zero-free-space /</pre
+          >
+          <input
+            id="fishscript"
+            type="file"
+            name="dataFile"
+            accept="*.fish"
+            autocomplete="off"
+            required
+            disabled
+          />
 
-				<h3>Data files</h3>
-				<p>You can <b>optionally</b> provide any number of data files that will be made available to
-					the guestfish script by name. A common case is to provide one or more tar archives that can be
-					extracted into the root filesystem. The file names must <b>exactly</b> match the names
-					used in the guestfish script.</p>
-				<div id="data-file-container">
-					<input type="file" name="dataFile" accept="*.*" autocomplete="off" disabled>
-					<button id="add-data-file" class="btn icon-btn" type="button">
-						<i class="fas fa-plus-circle fa-lg"></i>
-					</button>
-				</div>
+          <h3>Data files</h3>
+          <p>
+            You can <b>optionally</b> provide any number of data files that will be made available
+            to the guestfish script by name. A common case is to provide one or more tar archives
+            that can be extracted into the root filesystem. The file names must <b>exactly</b> match
+            the names used in the guestfish script.
+          </p>
+          <div id="data-file-container">
+            <input type="file" name="dataFile" accept="*.*" autocomplete="off" disabled />
+            <button id="add-data-file" class="btn icon-btn" type="button">
+              <i class="fas fa-plus-circle fa-lg"></i>
+            </button>
+          </div>
 
-				<h3>Options</h3>
-				<p>You can include an <b>optional</b> JSON document with environment variables
-					that get passed to the guestfish script. For example, to make the guestfish
-					variable <code>$mode</code> have a value of <code>production</code> you
-					could upload a JSON document like this:</p>
-				<pre class="example">{
+          <h3>Options</h3>
+          <p>
+            You can include an <b>optional</b> JSON document with environment variables that get
+            passed to the guestfish script. For example, to make the guestfish variable
+            <code>$mode</code> have a value of <code>production</code> you could upload a JSON
+            document like this:
+          </p>
+          <pre class="example">
+{
   "environment": {
     "mode" : "production"
   }
-}</pre>
-				<input type="file" name="options" accept="*.json" autocomplete="off" disabled>
+}</pre
+          >
+          <input type="file" name="options" accept="*.json" autocomplete="off" disabled />
 
-				<h3>Firstboot scripts</h3>
-				<p>You can <b>optionally</b> provide any number of shell scripts that will be executed
-					the first time the OS boots up, as the <code>root</code> user. These files must be named with a <code>.firstboot</code>
-					extension. Here's an example script that updates the <code>apt</code> package cache
-					and installs all available updates:</p>
-				<pre class="example">#!/usr/bin/env sh
+          <h3>Firstboot scripts</h3>
+          <p>
+            You can <b>optionally</b> provide any number of shell scripts that will be executed the
+            first time the OS boots up, as the <code>root</code> user. These files must be named
+            with a <code>.firstboot</code> extension. Here's an example script that updates the
+            <code>apt</code> package cache and installs all available updates:
+          </p>
+          <pre class="example">
+#!/usr/bin/env sh
 apt-get -qq update
 apt-get -qq upgrade
-apt-get -qq clean</pre>
-				<div id="firstboot-container">
-					<input type="file" name="dataFile" accept="*.firstboot" autocomplete="off" disabled>
-					<button id="add-firstboot" class="btn icon-btn" type="button">
-						<i class="fas fa-plus-circle fa-lg"></i>
-					</button>
-				</div>
-			</form>
-		</section>
-		<section class="submit disabled">
-			<h2>Go!</h2>
-			<p>Once you're satisifed with your care, hit the <b>Press Me</b> button to submit your request.</p>
-			<div class="hboxrow">
-				<button type="button" id="submit-btn" class="btn" disabled>Press Me</button>
-				<div id="submit-progress" class="hidden" style="margin-left: 1rem; flex: 1;">
-					<p class="upload-message">Uploading…</p>
-					<div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
-				</div>
-			</div>
-			<div id="alert" class="hidden">
-				<h3>🤯🤬😭😞</h3>
-				<p class="receipt-message">Something is amiss! <span class="message"></span></p>
-			</div>
-			<div id="progress">
-				<h3>Progress</h3>
-				<p>Your image customization progress is shown here.</p>
-				<div id="image-receipt-template" class="image-progress template">
-					<h4 class="base-image-id">foo-bar-20181001</h4>
-					<p class="receipt-message">Message here…</p>
-					<div class="hboxrow">
-						<div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
-						<a href="#" class="btn icon-btn download-image disabled" style="margin-left: 0.5rem;">
-							<i class="fas fa-download fa-1x"></i>
-						</a>
-					</div>
-				</div>
-				<div id="progress-container">
-				</div>
-			</div>
-		</section>
-	</main>
-	<footer>
-		<p>Powered by <a href="https://solarnetwork.github.io/">SolarNetwork</a>.</p>
-	</footer>
-</body>
-
+apt-get -qq clean</pre
+          >
+          <div id="firstboot-container">
+            <input type="file" name="dataFile" accept="*.firstboot" autocomplete="off" disabled />
+            <button id="add-firstboot" class="btn icon-btn" type="button">
+              <i class="fas fa-plus-circle fa-lg"></i>
+            </button>
+          </div>
+        </form>
+      </section>
+      <section class="submit disabled">
+        <h2>Go!</h2>
+        <p>
+          Once you're satisifed with your care, hit the <b>Press Me</b> button to submit your
+          request.
+        </p>
+        <div class="hboxrow">
+          <button type="button" id="submit-btn" class="btn" disabled>Press Me</button>
+          <div id="submit-progress" class="hidden" style="margin-left: 1rem; flex: 1;">
+            <p class="upload-message">Uploading…</p>
+            <div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
+          </div>
+        </div>
+        <div id="alert" class="hidden">
+          <h3>🤯🤬😭😞</h3>
+          <p class="receipt-message">Something is amiss! <span class="message"></span></p>
+        </div>
+        <div id="progress">
+          <h3>Progress</h3>
+          <p>Your image customization progress is shown here.</p>
+          <div id="image-receipt-template" class="image-progress template">
+            <h4 class="base-image-id">foo-bar-20181001</h4>
+            <p class="receipt-message">Message here…</p>
+            <div class="hboxrow">
+              <div class="progress-bar"><span class="progress" style="width: 0%;">0%</span></div>
+              <a href="#" class="btn icon-btn download-image disabled" style="margin-left: 0.5rem;">
+                <i class="fas fa-download fa-1x"></i>
+              </a>
+            </div>
+          </div>
+          <div id="progress-container"></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Source code on
+        <a
+          href="https://github.com/SolarNetwork/solarnetwork-node-image-tools/tree/master/solarnode-image-maker-ui"
+          >GitHub</a
+        >. Powered by <a href="https://solarnetwork.github.io/">SolarNetwork</a>.
+      </p>
+    </footer>
+  </body>
 </html>
