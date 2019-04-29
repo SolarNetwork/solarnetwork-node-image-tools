@@ -89,7 +89,7 @@ function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUr
  * @param {boolean} [options.solarNetworkAuthorization] `true` to authorize via SolarNetwork, `false` to authorize via NIM directly
  */
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
-  const self = { version: "0.1.0" };
+  const self = { version: "0.1.1" };
   const config = options || {
     solarNetworkAuthorization: true,
     receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
@@ -152,7 +152,7 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     const authBuilder = new AuthorizationV2Builder(tokenId, snUrlHelper);
     authBuilder.saveSigningKey(select("input[name=secret]").property("value"));
 
-    if (config.solarNetworkAuthorization == "true") {
+    if (config.solarNetworkAuthorization === "true") {
       // get authorized session key from SN
       executeWithSignedAuthorization("GET", snUrlHelper.nimAuthorizeUrl(), authBuilder)
         .on("load", authorizeSuccess)
@@ -604,7 +604,7 @@ export default function startApp() {
   var config = new Configuration(
     Object.assign(
       {
-        solarNetworkAuthorization: true,
+        solarNetworkAuthorization: "true",
         receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
       },
       urlQuery.urlQueryParse(window.location.search)
