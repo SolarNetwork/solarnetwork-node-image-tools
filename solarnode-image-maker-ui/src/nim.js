@@ -9,6 +9,8 @@ import {
   UserUrlHelperMixin
 } from "solarnetwork-api-core";
 import {
+  NimDefaultPath,
+  NimPathKey,
   NimUrlHelper,
   SolarNodeImageGroup,
   SolarNodeImageInfo,
@@ -89,7 +91,7 @@ function executeWithPreSignedAuthorization(method, url, auth, signMethod, signUr
  * @param {boolean} [options.solarNetworkAuthorization] `true` to authorize via SolarNetwork, `false` to authorize via NIM directly
  */
 var nimApp = function(nimUrlHelper, snUrlHelper, options) {
-  const self = { version: "0.1.1" };
+  const self = { version: "0.2.0" };
   const config = options || {
     solarNetworkAuthorization: true,
     receiptRefreshRate: DEFAULT_REFRESH_RECEIPT_RATE
@@ -106,6 +108,9 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
   /** @type {SolarNodeImageReceipt[]} */
   var receipts = [];
+
+  /** @type string */
+  var arch = null;
 
   /**
    * Get/set the receipt refresh rate.
@@ -154,7 +159,11 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
 
     if (config.solarNetworkAuthorization === "true") {
       // get authorized session key from SN
-      executeWithSignedAuthorization("GET", snUrlHelper.nimAuthorizeUrl(), authBuilder)
+      let snUrl = snUrlHelper.nimAuthorizeUrl();
+      if (arch) {
+        snUrl += "?arch=" + encodeURIComponent(arch);
+      }
+      executeWithSignedAuthorization("GET", snUrl, authBuilder)
         .on("load", authorizeSuccess)
         .on("error", authorizeError);
     } else {
@@ -584,11 +593,31 @@ var nimApp = function(nimUrlHelper, snUrlHelper, options) {
     selectAll("#submit-btn").attr("disabled", null);
   }
 
+  function handleArchSelectChange() {
+    const event = d3event;
+
+    /** @type HTMLSelectElement */
+    const sel = event.target;
+
+    const selectedArch = sel.options[sel.selectedIndex].value;
+    console.log("Selected architecuture: %s", selectedArch ? selectedArch : "(default)");
+    var nimPath = NimDefaultPath;
+    if (selectedArch) {
+      // insert arch- into start of path, after leading /
+      nimPath = "/" + selectedArch + "-" + nimPath.substring(1);
+      arch = selectedArch;
+    } else {
+      arch = null;
+    }
+    nimUrlHelper.env(NimPathKey, nimPath);
+  }
+
   function init() {
     select("#authorize").on("click", authorize);
     selectAll("input.auth").on("keyup", handleAuthorizationInputKeyup);
     select("#add-firstboot").on("click", handleAddFirstbootClick);
     select("#add-data-file").on("click", handleAddDataFileClick);
+    select("#arch-select").on("change", handleArchSelectChange);
     select("#submit-btn").on("click", handleSubmitButtonClick);
     select("#fishscript").on("change", handleFishscriptInputChange);
     return Object.defineProperties(self, {

@@ -21,6 +21,16 @@ header {
   margin: 10px 0 !important;
 }
 
+header.hboxrow {
+  align-items: baseline;
+}
+
+header.hboxrow label,
+header.hboxrow select {
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
 footer {
   clear: both;
   color: white;
@@ -178,6 +188,10 @@ input + button,
 button + button {
   margin-left: 2px;
   margin-right: 2px;
+}
+
+label {
+  color: white;
 }
 
 button {
