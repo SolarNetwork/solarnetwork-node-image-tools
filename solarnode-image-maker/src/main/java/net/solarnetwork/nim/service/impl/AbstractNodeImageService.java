@@ -231,7 +231,8 @@ public abstract class AbstractNodeImageService implements NodeImageService {
             return output;
           }
           throw new RuntimeException("Image " + key + " setup failed: " + result.getMessage());
-        } catch (Exception | Error e) {
+        } catch (Throwable e) {
+          log.error("Error processing image {}", outputId, e);
           tracker.setMessage(e.getClass().getSimpleName() + ": " + e.getMessage());
           try {
             nodeImageRepository.delete(outputId);
